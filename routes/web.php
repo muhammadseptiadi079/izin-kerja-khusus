@@ -3,6 +3,7 @@
 use App\Http\Controllers\AsistenAiController;
 use App\Http\Controllers\BerandaController;
 use App\Http\Controllers\DasborController;
+use App\Http\Controllers\EvaluasiController;
 use App\Http\Controllers\IzinKerjaController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PenggunaController;
@@ -18,8 +19,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/tindakan', TindakanController::class)->name('tindakan');
     Route::inertia('/akun', 'Akun')->name('akun');
 
-    Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring');
-    Route::get('/monitoring/ekspor', [MonitoringController::class, 'ekspor'])->name('monitoring.ekspor');
+    // Monitoring: keadaan sekarang saat pekerjaan berjalan. Evaluasi: hasil per periode setelah pekerjaan.
+    Route::get('/monitoring', MonitoringController::class)->name('monitoring');
+    Route::get('/evaluasi', [EvaluasiController::class, 'index'])->name('evaluasi');
+    Route::get('/evaluasi/ekspor', [EvaluasiController::class, 'ekspor'])->name('evaluasi.ekspor');
 
     Route::get('/izin/{izin}/cetak', [IzinKerjaController::class, 'cetak'])->name('izin.cetak');
     Route::get('/izin/{izin}/dokumen/{jenis}', [IzinKerjaController::class, 'unduh'])->name('izin.dokumen');

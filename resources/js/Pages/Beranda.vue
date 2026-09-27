@@ -53,7 +53,7 @@ const alur = computed(() => [
                             Buat akun pekerja
                         </Link>
                         <Link v-else :href="route('monitoring')" class="tombol-sekunder border-white/20 bg-white/5 px-5 py-3 text-base text-white shadow-none hover:bg-white/10">
-                            Monitoring & Evaluasi
+                            Monitoring
                         </Link>
                     </div>
                     <dl class="mt-8 grid max-w-lg grid-cols-3 gap-4 border-t border-white/10 pt-6">

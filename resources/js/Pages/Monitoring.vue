@@ -1,200 +1,199 @@
 <script setup lang="ts">
 import GrafikBatang from '@/Components/GrafikBatang.vue';
-import GrafikHarian from '@/Components/GrafikHarian.vue';
 import Ikon from '@/Components/Ikon.vue';
+import StatusBadge from '@/Components/StatusBadge.vue';
 import Statistik from '@/Components/Statistik.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import KesesuaianBadge from '@/Components/KesesuaianBadge.vue';
 import { tanggalJam } from '@/lib/format';
-import type { IzinRingkas, KesesuaianWaktu } from '@/types/izin';
-import { Link, router } from '@inertiajs/vue3';
-import { computed, reactive } from 'vue';
+import type { IzinRingkas } from '@/types/izin';
+import { Link, usePoll } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-type Rekap = { label: string; jumlah: number }[];
+type Berjalan = IzinRingkas & { jumlah_pekerja: number; uji_gas: boolean; sisa_menit: number; progres: number; keadaan: 'normal' | 'hampir_habis' | 'lewat_waktu' };
+type Antri = IzinRingkas & { menunggu_menit: number; mendesak: boolean };
 
 const props = defineProps<{
-    filter: { dari: string; sampai: string; jenis?: string; lokasi?: string; departemen?: string };
-    evaluasi: {
-        total: number;
-        diajukan: number;
-        disetujui: number;
-        ditolak_sekali: number;
-        dihentikan: number;
-        selesai: number;
+    diperbarui: string;
+    ringkasan: {
+        berjalan: number;
+        pekerja: number;
+        hampir_habis: number;
         lewat_waktu: number;
-        rata_jam_persetujuan: number | null;
+        menunggu_persetujuan: number;
+        menunggu_penutupan: number;
+        terjadwal_24_jam: number;
     };
-    perJenis: Rekap;
-    perLokasi: Rekap;
-    perDepartemen: Rekap;
-    perStatus: Rekap;
-    perHari: { tanggal: string; jumlah: number }[];
-    pasca: {
-        dievaluasi: number;
-        insiden: number;
-        tingkat_insiden: number | null;
-        dilaporkan_waktu: number;
-        sesuai_jadwal: number;
-        lewat_waktu: number;
-        sebelum_disahkan: number;
-        rata_menit_lewat: number | null;
-        rata_jam_lapor: number | null;
-    };
-    perKategoriInsiden: Rekap;
-    perKesesuaian: Rekap;
-    daftarInsiden: (IzinRingkas & { label_insiden: string; uraian_insiden: string })[];
-    daftarWaktu: (IzinRingkas & { kesesuaian_waktu: KesesuaianWaktu })[];
-    pilihan: { jenis: Record<string, string>; lokasi: string[]; departemen: string[] };
+    berjalan: Berjalan[];
+    antrian: { status: string; label: string; izin: Antri[] }[];
+    penutupan: (IzinRingkas & { ada_insiden: boolean | null; label_insiden: string | null; menunggu_menit: number })[];
+    jadwal: (IzinRingkas & { siap: boolean })[];
+    perLokasi: { label: string; jumlah: number; pekerja: number }[];
+    perJenis: { label: string; jumlah: number; pekerja: number }[];
 }>();
 
-const f = reactive({
-    dari: props.filter.dari,
-    sampai: props.filter.sampai,
-    jenis: props.filter.jenis ?? '',
-    lokasi: props.filter.lokasi ?? '',
-    departemen: props.filter.departemen ?? '',
-});
-const parameter = () => Object.fromEntries(Object.entries(f).filter(([, v]) => v));
-const terapkan = () => router.get(route('monitoring'), parameter(), { preserveState: true });
-const tautanEkspor = computed(() => route('monitoring.ekspor', parameter()));
-const tingkatPenutupan = computed(() => (props.evaluasi.diajukan ? Math.round((props.evaluasi.selesai / props.evaluasi.diajukan) * 100) : 0));
-const persenSesuai = computed(() => (props.pasca.dilaporkan_waktu ? Math.round((props.pasca.sesuai_jadwal / props.pasca.dilaporkan_waktu) * 100) : null));
-const durasi = (menit: number | null) => (menit === null ? null : menit >= 60 ? `${Math.floor(menit / 60)} j ${menit % 60} m` : `${menit} m`);
-const tanggal = (ymd: string) => new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(ymd + 'T00:00:00'));
+// Keadaan lapangan berubah terus: muat ulang data setiap menit tanpa memuat ulang halaman.
+usePoll(60_000);
+
+const jamDiperbarui = computed(() =>
+    new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).format(new Date(props.diperbarui)),
+);
+const durasi = (menit: number) => {
+    const m = Math.abs(menit);
+    return m >= 60 ? `${Math.floor(m / 60)} j ${m % 60} m` : `${m} m`;
+};
+const jamSaja = (iso: string) => new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).format(new Date(iso));
+const hariSaja = (iso: string) => new Intl.DateTimeFormat('id-ID', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(iso));
+
+const warnaKeadaan = {
+    normal: { batang: 'bg-green-500', teks: 'text-green-700', bingkai: 'border-slate-200/80' },
+    hampir_habis: { batang: 'bg-amber-500', teks: 'text-amber-700', bingkai: 'border-amber-300' },
+    lewat_waktu: { batang: 'bg-red-600', teks: 'text-red-700', bingkai: 'border-red-300 ring-1 ring-red-500/20' },
+};
+const lokasiGrafik = computed(() => props.perLokasi.map((l) => ({ label: `${l.label} · ${l.pekerja} org`, jumlah: l.jumlah })));
+const jenisGrafik = computed(() => props.perJenis.map((l) => ({ label: l.label, jumlah: l.jumlah })));
 </script>
 
 <template>
-    <AppLayout judul="Monitoring & Evaluasi">
+    <AppLayout judul="Monitoring">
         <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h1 class="judul-halaman">Monitoring & Evaluasi</h1>
-                <p class="text-slate-600">
-                    Rekap izin kerja khusus berdasarkan jadwal mulai, {{ tanggal(filter.dari) }} – {{ tanggal(filter.sampai) }}. Draf dan izin yang dibatalkan tidak dihitung.
+                <h1 class="judul-halaman">Monitoring</h1>
+                <p class="mt-1 flex items-center gap-2 text-slate-600">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+                    </span>
+                    Keadaan saat ini · diperbarui {{ jamDiperbarui }}, otomatis tiap menit
                 </p>
             </div>
-            <a :href="tautanEkspor" class="tombol-sekunder"><Ikon nama="unduh" kelas="h-4 w-4" />Unduh Excel</a>
+            <Link :href="route('evaluasi')" class="tombol-sekunder"><Ikon nama="grafik" kelas="h-4 w-4" />Evaluasi hasil</Link>
         </div>
 
-        <form class="panel mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] lg:items-end" @submit.prevent="terapkan">
-            <div><label class="label" for="dari">Dari</label><input id="dari" v-model="f.dari" type="date" class="masukan" /></div>
-            <div><label class="label" for="sampai">Sampai</label><input id="sampai" v-model="f.sampai" type="date" class="masukan" /></div>
-            <div>
-                <label class="label" for="jenis">Jenis</label>
-                <select id="jenis" v-model="f.jenis" class="masukan">
-                    <option value="">Semua</option>
-                    <option v-for="(label, k) in pilihan.jenis" :key="k" :value="k">{{ label }}</option>
-                </select>
-            </div>
-            <div>
-                <label class="label" for="lokasi">Lokasi</label>
-                <select id="lokasi" v-model="f.lokasi" class="masukan">
-                    <option value="">Semua</option>
-                    <option v-for="l in pilihan.lokasi" :key="l">{{ l }}</option>
-                </select>
-            </div>
-            <div>
-                <label class="label" for="departemen">Departemen</label>
-                <select id="departemen" v-model="f.departemen" class="masukan">
-                    <option value="">Semua</option>
-                    <option v-for="d in pilihan.departemen" :key="d">{{ d }}</option>
-                </select>
-            </div>
-            <div class="flex gap-2">
-                <button type="submit" class="tombol">Terapkan</button>
-                <Link :href="route('monitoring')" class="tombol-sekunder">Bulan ini</Link>
-            </div>
-        </form>
-
-        <div class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Statistik :angka="evaluasi.diajukan" label="Izin diajukan" ikon="kirim" nada="oranye" />
-            <Statistik :angka="evaluasi.disetujui" label="Lolos persetujuan" ikon="aktif" nada="hijau" />
-            <Statistik :angka="evaluasi.selesai" label="Selesai & ditutup" ikon="selesai" nada="biru" />
-            <Statistik :angka="evaluasi.rata_jam_persetujuan" label="Rata-rata jam sampai disetujui" ikon="jam" nada="abu" />
-            <Statistik :angka="evaluasi.ditolak_sekali" label="Pernah ditolak (perlu perbaikan)" ikon="tolak" nada="amber" />
-            <Statistik :angka="evaluasi.dihentikan" label="Dihentikan (stop work)" ikon="henti" :bahaya="evaluasi.dihentikan > 0" />
-            <Statistik :angka="evaluasi.lewat_waktu" label="Aktif lewat waktu, belum ditutup" ikon="peringatan" :bahaya="evaluasi.lewat_waktu > 0" />
-            <Statistik :angka="`${tingkatPenutupan}%`" label="Tingkat penutupan" ikon="persen" nada="hijau" />
+        <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+            <Statistik :angka="ringkasan.berjalan" label="Pekerjaan berjalan" ikon="aktif" nada="hijau" />
+            <Statistik :angka="ringkasan.pekerja" label="Orang di lapangan" ikon="pengguna" nada="biru" />
+            <Statistik :angka="ringkasan.hampir_habis" label="Berakhir ≤ 1 jam" ikon="jam" nada="amber" />
+            <Statistik :angka="ringkasan.lewat_waktu" label="Lewat waktu" ikon="peringatan" :bahaya="ringkasan.lewat_waktu > 0" nada="hijau" />
+            <Statistik :angka="ringkasan.menunggu_persetujuan" label="Menunggu persetujuan" ikon="lonceng" nada="amber" />
+            <Statistik :angka="ringkasan.menunggu_penutupan" label="Menunggu penutupan" ikon="selesai" nada="abu" />
         </div>
 
-        <div v-if="evaluasi.total === 0" class="panel text-slate-500">Belum ada izin pada periode dan filter ini.</div>
-        <template v-else>
-            <div class="grid gap-5 md:grid-cols-2">
-                <div class="panel"><h2 class="judul-bagian mb-2">Per jenis izin</h2><GrafikBatang :data="perJenis" /></div>
-                <div class="panel"><h2 class="judul-bagian mb-2">Per lokasi</h2><GrafikBatang :data="perLokasi" /></div>
-                <div class="panel"><h2 class="judul-bagian mb-2">Per departemen</h2><GrafikBatang :data="perDepartemen" /></div>
-                <div class="panel"><h2 class="judul-bagian mb-2">Per status</h2><GrafikBatang :data="perStatus" /></div>
+        <!-- Pekerjaan yang sedang berjalan -->
+        <section class="mb-6">
+            <h2 class="judul-bagian mb-3">Sedang berjalan di lapangan</h2>
+            <div v-if="!berjalan.length" class="panel flex items-center gap-3 text-slate-500">
+                <Ikon nama="aktif" kelas="h-5 w-5 text-slate-400" />Tidak ada pekerjaan berisiko tinggi yang sedang berjalan.
             </div>
-            <div class="panel mt-5"><h2 class="judul-bagian mb-2">Izin per hari mulai</h2><GrafikHarian :data="perHari" /></div>
+            <div v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <Link
+                    v-for="i in berjalan"
+                    :key="i.id"
+                    :href="route('izin.show', i.id)"
+                    :class="['block rounded-2xl border bg-white p-4 shadow-kartu transition hover:shadow-angkat', warnaKeadaan[i.keadaan].bingkai]"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-merek-700">{{ i.nomor }}</div>
+                            <div class="truncate text-sm font-semibold">{{ i.label_jenis }}</div>
+                        </div>
+                        <span v-if="i.uji_gas" class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">Uji gas</span>
+                    </div>
+                    <div class="mt-1 truncate text-sm text-slate-600">{{ i.lokasi }}</div>
+                    <div class="mt-1 flex items-center gap-3 text-xs text-slate-500">
+                        <span class="inline-flex items-center gap-1"><Ikon nama="pengguna" kelas="h-3.5 w-3.5" />{{ i.jumlah_pekerja }} orang</span>
+                        <span class="truncate">{{ i.pemohon }}</span>
+                    </div>
+                    <div class="mt-3">
+                        <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                            <div :class="['h-full rounded-full', warnaKeadaan[i.keadaan].batang]" :style="{ width: `${i.progres}%` }" />
+                        </div>
+                        <div class="mt-1.5 flex justify-between text-xs">
+                            <span class="text-slate-500">{{ jamSaja(i.mulai_at) }} – {{ jamSaja(i.selesai_at) }}</span>
+                            <span :class="['font-bold', warnaKeadaan[i.keadaan].teks]">
+                                {{ i.keadaan === 'lewat_waktu' ? `Lewat ${durasi(i.sisa_menit)}` : `Sisa ${durasi(i.sisa_menit)}` }}
+                            </span>
+                        </div>
+                    </div>
+                </Link>
+            </div>
+        </section>
 
-            <!-- Evaluasi pasca pekerjaan -->
-            <section class="mt-8">
-                <p class="text-sm font-semibold text-merek-700">Setelah pekerjaan</p>
-                <h2 class="judul-halaman mt-1">Evaluasi pasca pekerjaan</h2>
-                <p class="mb-4 text-slate-600">
-                    Dari {{ pasca.dievaluasi }} izin yang sudah dilaporkan selesai atau dihentikan. Toleransi waktu 15 menit.
-                </p>
-
-                <div class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-                    <Statistik :angka="pasca.insiden" label="Izin dengan insiden" ikon="peringatan" :bahaya="pasca.insiden > 0" nada="hijau" />
-                    <Statistik :angka="pasca.tingkat_insiden === null ? null : `${pasca.tingkat_insiden}%`" label="Tingkat insiden" ikon="persen" :nada="pasca.insiden ? 'amber' : 'hijau'" />
-                    <Statistik :angka="persenSesuai === null ? null : `${persenSesuai}%`" label="Sesuai jadwal (mulai &amp; selesai)" ikon="jam" nada="hijau" />
-                    <Statistik :angka="pasca.lewat_waktu" label="Selesai lewat waktu" ikon="jam" nada="amber" />
-                    <Statistik :angka="pasca.sebelum_disahkan" label="Mulai sebelum disahkan" ikon="henti" :bahaya="pasca.sebelum_disahkan > 0" />
-                    <Statistik :angka="durasi(pasca.rata_menit_lewat)" label="Rata-rata keterlambatan" ikon="jam" nada="abu" />
-                    <Statistik :angka="pasca.rata_jam_lapor === null ? null : `${pasca.rata_jam_lapor} j`" label="Rata-rata jeda lapor penutupan" ikon="kirim" nada="abu" />
-                    <Statistik :angka="pasca.dilaporkan_waktu" label="Jam kerja sebenarnya dilaporkan" ikon="formulir" nada="biru" />
+        <!-- Antrian persetujuan per tahap -->
+        <section class="mb-6">
+            <h2 class="judul-bagian mb-3">Antrian persetujuan</h2>
+            <div class="grid gap-3 md:grid-cols-3">
+                <div v-for="t in antrian" :key="t.status" class="panel p-4 sm:p-4">
+                    <div class="mb-2 flex items-center justify-between">
+                        <h3 class="font-bold">{{ t.label }}</h3>
+                        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold">{{ t.izin.length }}</span>
+                    </div>
+                    <p v-if="!t.izin.length" class="text-sm text-slate-400">Kosong</p>
+                    <ul class="space-y-2">
+                        <li v-for="i in t.izin" :key="i.id">
+                            <Link :href="route('izin.show', i.id)" class="block rounded-xl border border-slate-200 px-3 py-2 hover:bg-slate-50">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="font-semibold text-merek-700">{{ i.nomor }}</span>
+                                    <span v-if="i.mendesak" class="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white">Mendesak</span>
+                                </div>
+                                <div class="truncate text-xs text-slate-600">{{ i.label_jenis }} · {{ i.lokasi }}</div>
+                                <div class="mt-0.5 text-xs text-slate-500">
+                                    Menunggu {{ durasi(i.menunggu_menit) }} · mulai {{ hariSaja(i.mulai_at) }} {{ jamSaja(i.mulai_at) }}
+                                </div>
+                            </Link>
+                        </li>
+                    </ul>
                 </div>
+            </div>
+        </section>
 
-                <div v-if="pasca.dievaluasi === 0" class="panel text-slate-500">Belum ada izin yang dilaporkan selesai pada periode ini.</div>
-                <template v-else>
-                    <div class="grid gap-5 md:grid-cols-2">
-                        <div class="panel">
-                            <h3 class="judul-bagian mb-2">Insiden per kategori</h3>
-                            <GrafikBatang v-if="perKategoriInsiden.length" :data="perKategoriInsiden" />
-                            <p v-else class="flex items-center gap-2 text-sm text-green-700"><Ikon nama="centang" kelas="h-4 w-4" />Tidak ada insiden dilaporkan.</p>
+        <div class="grid gap-5 lg:grid-cols-2">
+            <!-- Jadwal 24 jam -->
+            <section class="panel">
+                <h2 class="judul-bagian mb-1">Jadwal 24 jam ke depan</h2>
+                <p class="mb-3 text-sm text-slate-500">Izin yang akan mulai. Yang belum disahkan perlu diputuskan sebelum jam mulai.</p>
+                <p v-if="!jadwal.length" class="text-sm text-slate-400">Tidak ada jadwal.</p>
+                <ol class="relative ml-1 border-l-2 border-slate-200">
+                    <li v-for="i in jadwal" :key="i.id" class="relative pb-3 pl-4 last:pb-0">
+                        <span :class="['absolute top-1.5 -left-[7px] h-3 w-3 rounded-full ring-2 ring-white', i.siap ? 'bg-green-500' : 'bg-amber-500']" />
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <span class="font-bold tabular-nums">{{ hariSaja(i.mulai_at) }} {{ jamSaja(i.mulai_at) }}</span>
+                                <Link :href="route('izin.show', i.id)" class="ml-2 font-semibold text-merek-700 hover:underline">{{ i.nomor }}</Link>
+                                <div class="truncate text-sm text-slate-600">{{ i.label_jenis }} · {{ i.lokasi }}</div>
+                            </div>
+                            <StatusBadge :status="i.status" :label="i.siap ? 'Siap' : i.label_status" />
                         </div>
-                        <div class="panel">
-                            <h3 class="judul-bagian mb-2">Kesesuaian waktu kerja</h3>
-                            <GrafikBatang v-if="perKesesuaian.length" :data="perKesesuaian" />
-                            <p v-else class="text-sm text-slate-500">Belum ada jam kerja sebenarnya yang dilaporkan.</p>
-                        </div>
-                    </div>
-
-                    <div v-if="daftarWaktu.length" class="panel mt-5">
-                        <h3 class="judul-bagian mb-1">Izin tidak sesuai jadwal</h3>
-                        <p class="mb-3 text-sm text-slate-500">"Mulai sebelum disahkan" berarti pekerjaan berjalan tanpa izin yang sah dan perlu ditindaklanjuti.</p>
-                        <ul class="divide-y divide-slate-100">
-                            <li v-for="i in daftarWaktu" :key="i.id" class="flex flex-wrap items-start justify-between gap-2 py-3">
-                                <div class="min-w-0">
-                                    <Link :href="route('izin.show', i.id)" class="font-semibold text-merek-700 hover:underline">{{ i.nomor }}</Link>
-                                    <span class="text-sm text-slate-600"> · {{ i.label_jenis }} · {{ i.lokasi }} · {{ i.pemohon }}</span>
-                                    <ul class="mt-0.5 text-sm text-slate-700">
-                                        <li v-for="t in i.kesesuaian_waktu.temuan" :key="t">{{ t }}</li>
-                                    </ul>
-                                </div>
-                                <KesesuaianBadge :nilai="i.kesesuaian_waktu" />
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div v-if="daftarInsiden.length" class="panel mt-5">
-                        <h3 class="judul-bagian mb-3">Daftar insiden</h3>
-                        <ul class="divide-y divide-slate-100">
-                            <li v-for="i in daftarInsiden" :key="i.id" class="py-3">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <div>
-                                        <Link :href="route('izin.show', i.id)" class="font-semibold text-merek-700 hover:underline">{{ i.nomor }}</Link>
-                                        <span class="text-sm text-slate-600"> · {{ i.label_jenis }} · {{ i.lokasi }}</span>
-                                    </div>
-                                    <span class="rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white">{{ i.label_insiden }}</span>
-                                </div>
-                                <p class="mt-1 line-clamp-2 text-sm text-slate-700">{{ i.uraian_insiden }}</p>
-                                <p class="text-xs text-slate-500">{{ i.pemohon }} · {{ tanggalJam(i.selesai_at) }}</p>
-                            </li>
-                        </ul>
-                    </div>
-                </template>
+                    </li>
+                </ol>
             </section>
-        </template>
+
+            <!-- Menunggu penutupan -->
+            <section class="panel">
+                <h2 class="judul-bagian mb-1">Menunggu penutupan</h2>
+                <p class="mb-3 text-sm text-slate-500">Pekerjaan sudah dilaporkan selesai, menunggu Pengawas memastikan area aman.</p>
+                <p v-if="!penutupan.length" class="text-sm text-slate-400">Tidak ada.</p>
+                <ul class="divide-y divide-slate-100">
+                    <li v-for="i in penutupan" :key="i.id" class="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                        <div class="min-w-0">
+                            <Link :href="route('izin.show', i.id)" class="font-semibold text-merek-700 hover:underline">{{ i.nomor }}</Link>
+                            <span class="text-sm text-slate-600"> · {{ i.lokasi }}</span>
+                            <div class="text-xs text-slate-500">Menunggu {{ durasi(i.menunggu_menit) }}</div>
+                        </div>
+                        <span
+                            v-if="i.label_insiden"
+                            :class="['rounded-full px-2.5 py-0.5 text-xs font-semibold', i.ada_insiden ? 'bg-red-600 text-white' : 'bg-green-50 text-green-800 ring-1 ring-green-600/20 ring-inset']"
+                            >{{ i.label_insiden }}</span
+                        >
+                    </li>
+                </ul>
+            </section>
+        </div>
+
+        <div v-if="berjalan.length" class="mt-5 grid gap-5 md:grid-cols-2">
+            <div class="panel"><h2 class="judul-bagian mb-2">Pekerjaan berjalan per lokasi</h2><GrafikBatang :data="lokasiGrafik" /></div>
+            <div class="panel"><h2 class="judul-bagian mb-2">Pekerjaan berjalan per jenis</h2><GrafikBatang :data="jenisGrafik" /></div>
+        </div>
+
+        <p class="mt-6 text-center text-xs text-slate-400">Terakhir diperbarui {{ tanggalJam(diperbarui) }}</p>
     </AppLayout>
 </template>

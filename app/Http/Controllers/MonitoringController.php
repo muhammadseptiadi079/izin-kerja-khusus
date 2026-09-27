@@ -2,126 +2,105 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\RekapIzinExport;
 use App\Models\IzinKerja;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
+/**
+ * Monitoring: keadaan izin SEKARANG, saat pekerjaan berjalan.
+ * Rekap per periode dan evaluasi setelah pekerjaan ada di EvaluasiController.
+ */
 class MonitoringController extends Controller
 {
-    public function index(Request $request): Response
+    /** Izin yang berakhir dalam rentang ini dianggap hampir habis. */
+    private const HAMPIR_HABIS_MENIT = 60;
+
+    public function __invoke(Request $request): Response
     {
-        [$dari, $sampai] = $this->periode($request);
-        $izin = $this->query($request, $dari, $sampai)->get();
+        $sekarang = now();
+        $terlihat = fn () => IzinKerja::terlihatOleh($request->user())->with('pemohon');
 
-        $rekap = fn (string $kolom, callable $label) => $izin->groupBy($kolom)
-            ->map(fn ($grup, $kunci) => ['label' => $label($kunci), 'jumlah' => $grup->count()])
-            ->sortByDesc('jumlah')->values();
+        // Izin yang sudah disahkan. "Berjalan" bila jadwal mulainya sudah tiba.
+        $disahkan = $terlihat()->where('status', 'aktif')->orderBy('selesai_at')->get();
+        $berjalan = $disahkan->filter(fn (IzinKerja $i) => $i->mulai_at->lte($sekarang))->values();
+        $terjadwal = $disahkan->filter(fn (IzinKerja $i) => $i->mulai_at->gt($sekarang))->sortBy('mulai_at')->values();
 
-        $diajukan = $izin->whereNotNull('diajukan_at');
-        $disahkan = $izin->whereNotNull('disahkan_at');
+        $tahap = config('izin.tahap_persetujuan');
+        $antrian = $terlihat()->whereIn('status', array_keys($tahap))->orderBy('updated_at')->get();
+        $penutupan = $terlihat()->where('status', 'menunggu_penutupan')->orderBy('penutupan_diajukan_at')->get();
 
-        // Evaluasi pasca pekerjaan: hanya izin yang sudah dilaporkan (penutupan diajukan, selesai, atau dihentikan).
-        $dievaluasi = $izin->whereNotNull('ada_insiden');
-        $berinsiden = $dievaluasi->where('ada_insiden', true);
-        $waktu = $izin->map(fn (IzinKerja $i) => [$i, $i->kesesuaianWaktu()])->filter(fn ($p) => $p[1] !== null);
-        $labelWaktu = ['sesuai' => 'Sesuai jadwal', 'mulai_awal' => 'Mulai sebelum jadwal', 'lewat_waktu' => 'Selesai lewat waktu', 'sebelum_disahkan' => 'Mulai sebelum disahkan'];
-        $lewat = $waktu->filter(fn ($p) => $p[1]['lewat_menit'] > config('izin.toleransi_waktu_menit'));
-        $jedaLapor = $izin->filter(fn ($i) => $i->penutupan_diajukan_at && $i->selesai_aktual_at);
-
-        $baris = fn (IzinKerja $i, array $tambahan) => [...$i->ringkas(), ...$tambahan];
+        $kartuBerjalan = $berjalan->map(fn (IzinKerja $i) => $this->kartuBerjalan($i, $sekarang));
 
         return Inertia::render('Monitoring', [
-            'filter' => [
-                'dari' => $dari->format('Y-m-d'),
-                'sampai' => $sampai->format('Y-m-d'),
-                ...$request->only('jenis', 'lokasi', 'departemen'),
+            'diperbarui' => $sekarang->toIso8601String(),
+            'ringkasan' => [
+                'berjalan' => $berjalan->count(),
+                'pekerja' => $kartuBerjalan->sum('jumlah_pekerja'),
+                'hampir_habis' => $kartuBerjalan->where('keadaan', 'hampir_habis')->count(),
+                'lewat_waktu' => $kartuBerjalan->where('keadaan', 'lewat_waktu')->count(),
+                'menunggu_persetujuan' => $antrian->count(),
+                'menunggu_penutupan' => $penutupan->count(),
+                'terjadwal_24_jam' => $terjadwal->filter(fn ($i) => $i->mulai_at->lte($sekarang->copy()->addDay()))->count(),
             ],
-            'evaluasi' => [
-                'total' => $izin->count(),
-                'diajukan' => $diajukan->count(),
-                'disetujui' => $disahkan->count(),
-                'ditolak_sekali' => $izin->filter(fn ($i) => $i->riwayat->contains('aksi', 'tolak'))->count(),
-                'dihentikan' => $izin->where('status', 'dihentikan')->count(),
-                'selesai' => $izin->where('status', 'selesai')->count(),
-                'lewat_waktu' => $izin->filter->lewatWaktu()->count(),
-                // Rata-rata jam dari diajukan sampai disahkan, sebagai ukuran kecepatan persetujuan.
-                'rata_jam_persetujuan' => $disahkan->isEmpty() ? null
-                    : round($disahkan->avg(fn ($i) => $i->diajukan_at->diffInMinutes($i->disahkan_at)) / 60, 1),
-            ],
-            'pasca' => [
-                'dievaluasi' => $dievaluasi->count(),
-                'insiden' => $berinsiden->count(),
-                'tingkat_insiden' => $dievaluasi->isEmpty() ? null : round($berinsiden->count() / $dievaluasi->count() * 100, 1),
-                'dilaporkan_waktu' => $waktu->count(),
-                'sesuai_jadwal' => $waktu->filter(fn ($p) => $p[1]['kode'] === 'sesuai')->count(),
-                'lewat_waktu' => $lewat->count(),
-                'sebelum_disahkan' => $waktu->filter(fn ($p) => $p[1]['kode'] === 'sebelum_disahkan')->count(),
-                'rata_menit_lewat' => $lewat->isEmpty() ? null : (int) round($lewat->avg(fn ($p) => $p[1]['lewat_menit'])),
-                // Jeda dari pekerjaan selesai sampai penutupan dilaporkan.
-                'rata_jam_lapor' => $jedaLapor->isEmpty() ? null
-                    : round($jedaLapor->avg(fn ($i) => max(0, $i->selesai_aktual_at->diffInMinutes($i->penutupan_diajukan_at))) / 60, 1),
-            ],
-            'perKategoriInsiden' => $berinsiden->groupBy('kategori_insiden')
-                ->map(fn ($grup, $k) => ['label' => config('izin.insiden.'.$k, $k), 'jumlah' => $grup->count()])
-                ->sortByDesc('jumlah')->values(),
-            'perKesesuaian' => $waktu->groupBy(fn ($p) => $p[1]['kode'])
-                ->map(fn ($grup, $k) => ['label' => $labelWaktu[$k], 'jumlah' => $grup->count()])
-                ->sortByDesc('jumlah')->values(),
-            'daftarInsiden' => $berinsiden->sortByDesc('selesai_aktual_at')->take(20)
-                ->map(fn ($i) => $baris($i, ['label_insiden' => $i->labelInsiden(), 'uraian_insiden' => $i->uraian_insiden]))->values(),
-            'daftarWaktu' => $waktu->filter(fn ($p) => in_array($p[1]['kode'], ['lewat_waktu', 'sebelum_disahkan', 'mulai_awal'], true))
-                ->sortByDesc(fn ($p) => $p[1]['kode'] === 'sebelum_disahkan' ? PHP_INT_MAX : $p[1]['lewat_menit'])->take(20)
-                ->map(fn ($p) => $baris($p[0], ['kesesuaian_waktu' => $p[1]]))->values(),
-            'perJenis' => $rekap('jenis', fn ($k) => config('izin.jenis.'.$k.'.label', $k)),
-            'perLokasi' => $rekap('lokasi', fn ($k) => $k),
-            'perDepartemen' => $rekap('departemen', fn ($k) => $k),
-            'perStatus' => $rekap('status', fn ($k) => IzinKerja::STATUS[$k] ?? $k),
-            'perHari' => $izin->groupBy(fn ($i) => $i->mulai_at->format('Y-m-d'))
-                ->map(fn ($grup, $hari) => ['tanggal' => $hari, 'jumlah' => $grup->count()])
-                ->sortKeys()->values(),
-            'pilihan' => [
-                'jenis' => collect(config('izin.jenis'))->map(fn ($j) => $j['label']),
-                'lokasi' => config('izin.lokasi'),
-                'departemen' => config('izin.departemen'),
-            ],
+            // Lewat waktu paling atas, lalu yang paling cepat berakhir.
+            'berjalan' => $kartuBerjalan->sortBy(fn ($k) => [$k['keadaan'] === 'lewat_waktu' ? 0 : 1, $k['sisa_menit']])->values(),
+            'antrian' => collect($tahap)->map(fn ($t, $status) => [
+                'status' => $status,
+                'label' => $t['label'],
+                'izin' => $antrian->where('status', $status)->map(fn (IzinKerja $i) => [
+                    ...$i->ringkas(),
+                    'menunggu_menit' => (int) $i->updated_at->diffInMinutes($sekarang),
+                    // Mendesak: jadwal mulai tinggal kurang dari 2 jam (atau sudah lewat) tetapi belum disahkan.
+                    'mendesak' => $i->mulai_at->lte($sekarang->copy()->addHours(2)),
+                ])->values(),
+            ])->values(),
+            'penutupan' => $penutupan->map(fn (IzinKerja $i) => [
+                ...$i->ringkas(),
+                'ada_insiden' => $i->ada_insiden,
+                'label_insiden' => $i->labelInsiden(),
+                'menunggu_menit' => (int) ($i->penutupan_diajukan_at ?? $i->updated_at)->diffInMinutes($sekarang),
+            ])->values(),
+            'jadwal' => $this->jadwal24Jam($terjadwal, $antrian, $sekarang),
+            'perLokasi' => $this->sebaran($kartuBerjalan, 'lokasi_pilihan'),
+            'perJenis' => $this->sebaran($kartuBerjalan, 'label_jenis'),
         ]);
     }
 
-    public function ekspor(Request $request): BinaryFileResponse
+    private function kartuBerjalan(IzinKerja $i, $sekarang): array
     {
-        [$dari, $sampai] = $this->periode($request);
-        $izin = $this->query($request, $dari, $sampai)->orderBy('mulai_at')->get();
+        $sisa = (int) $sekarang->diffInMinutes($i->selesai_at, false);
+        $total = max(1, $i->mulai_at->diffInMinutes($i->selesai_at));
 
-        return Excel::download(
-            new RekapIzinExport($izin),
-            'rekap-ikk-'.$dari->format('Ymd').'-'.$sampai->format('Ymd').'.xlsx'
-        );
+        return [
+            ...$i->ringkas(),
+            'lokasi_pilihan' => $i->lokasi,
+            'jumlah_pekerja' => collect(preg_split('/\R/', (string) $i->pekerja))->filter(fn ($n) => trim($n) !== '')->count(),
+            'uji_gas' => $i->butuhUjiGas(),
+            'sisa_menit' => $sisa,
+            'progres' => (int) min(100, max(0, round($i->mulai_at->diffInMinutes($sekarang) / $total * 100))),
+            'keadaan' => $sisa < 0 ? 'lewat_waktu' : ($sisa <= self::HAMPIR_HABIS_MENIT ? 'hampir_habis' : 'normal'),
+        ];
     }
 
-    private function periode(Request $request): array
+    /** Izin yang dijadwalkan mulai dalam 24 jam ke depan, baik sudah disahkan maupun masih diproses. */
+    private function jadwal24Jam(Collection $terjadwal, Collection $antrian, $sekarang): Collection
     {
-        $request->validate(['dari' => ['nullable', 'date'], 'sampai' => ['nullable', 'date']]);
+        $batas = $sekarang->copy()->addDay();
 
-        $dari = $request->filled('dari') ? Carbon::parse($request->dari)->startOfDay() : now()->startOfMonth();
-        $sampai = $request->filled('sampai') ? Carbon::parse($request->sampai)->endOfDay() : now()->endOfMonth();
-
-        return $sampai->lt($dari) ? [$sampai->copy()->startOfDay(), $dari->copy()->endOfDay()] : [$dari, $sampai];
+        return $terjadwal->concat($antrian)
+            ->filter(fn (IzinKerja $i) => $i->mulai_at->lte($batas) && $i->selesai_at->gt($sekarang))
+            ->sortBy('mulai_at')
+            ->map(fn (IzinKerja $i) => [...$i->ringkas(), 'siap' => $i->status === 'aktif'])
+            ->values();
     }
 
-    /** Izin yang jadwal mulainya jatuh di periode, tanpa draf dan yang dibatalkan. */
-    private function query(Request $request, Carbon $dari, Carbon $sampai)
+    private function sebaran(Collection $kartu, string $kolom): Collection
     {
-        return IzinKerja::terlihatOleh($request->user())
-            ->with('pemohon', 'riwayat')
-            ->whereNotIn('status', ['draf', 'dibatalkan'])
-            ->whereBetween('mulai_at', [$dari, $sampai])
-            ->when($request->jenis, fn ($q, $jenis) => $q->where('jenis', $jenis))
-            ->when($request->lokasi, fn ($q, $lokasi) => $q->where('lokasi', $lokasi))
-            ->when($request->departemen, fn ($q, $d) => $q->where('departemen', $d));
+        return $kartu->groupBy($kolom)
+            ->map(fn ($grup, $kunci) => ['label' => $kunci, 'jumlah' => $grup->count(), 'pekerja' => $grup->sum('jumlah_pekerja')])
+            ->sortByDesc('jumlah')
+            ->values();
     }
 }

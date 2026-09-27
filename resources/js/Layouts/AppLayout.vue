@@ -24,6 +24,7 @@ const menuAtas = computed<ItemMenu[]>(() =>
               { label: 'Beranda', rute: 'dasbor', aktif: ['dasbor'] },
               { label: 'Izin', rute: 'izin.index', aktif: ['izin.index', 'izin.show', 'izin.edit'] },
               { label: 'Monitoring', rute: 'monitoring', aktif: ['monitoring'] },
+              { label: 'Evaluasi', rute: 'evaluasi', aktif: ['evaluasi'] },
               { label: 'Jenis Izin', rute: 'beranda', aktif: ['beranda', 'jenis.show'] },
           ]
         : [
@@ -39,7 +40,7 @@ const menuBawah = computed<ItemMenu[]>(() =>
               { label: 'Izin', rute: 'izin.index', ikon: 'daftar', aktif: ['izin.index', 'izin.show', 'izin.edit'] },
               { label: 'Ajukan', rute: 'izin.create', ikon: 'tambah', utama: true, aktif: ['izin.create'] },
               { label: 'Tindakan', rute: 'tindakan', ikon: 'lonceng', lencana: true, aktif: ['tindakan'] },
-              { label: 'Akun', rute: 'akun', ikon: 'profil', aktif: ['akun', 'profile.edit', 'monitoring', 'pengguna.*'] },
+              { label: 'Akun', rute: 'akun', ikon: 'profil', aktif: ['akun', 'profile.edit', 'monitoring', 'evaluasi', 'pengguna.*'] },
           ]
         : [
               { label: 'Beranda', rute: 'beranda', ikon: 'rumah', aktif: ['beranda'] },

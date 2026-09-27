@@ -8,7 +8,8 @@ const user = usePage<PageProps>().props.auth.user!;
 
 const menu = [
     { label: 'Profil & data diri', keterangan: 'Nama, NIK, nomor WA, kata sandi', rute: 'profile.edit', ikon: 'profil' },
-    { label: 'Monitoring & Evaluasi', keterangan: 'Rekap, grafik, unduh Excel', rute: 'monitoring', ikon: 'grafik' },
+    { label: 'Monitoring', keterangan: 'Pekerjaan yang sedang berjalan sekarang', rute: 'monitoring', ikon: 'aktif' },
+    { label: 'Evaluasi', keterangan: 'Hasil per periode, insiden, unduh Excel', rute: 'evaluasi', ikon: 'grafik' },
     { label: 'Jenis izin kerja khusus', keterangan: 'Penjelasan dan persyaratan', rute: 'beranda', ikon: 'buku' },
     ...(user.peran === 'admin' ? [{ label: 'Kelola pengguna', keterangan: 'Tambah akun, atur peran', rute: 'pengguna.index', ikon: 'pengguna' }] : []),
 ];
