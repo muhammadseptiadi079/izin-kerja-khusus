@@ -18,7 +18,9 @@ Web app untuk mengajukan, menyetujui, dan menutup **izin kerja khusus (IKK)** un
 
 ## Fitur
 
-- **Menu Home, Registrasi, dan Monitoring & Evaluasi**, seperti situs IKK sebelumnya.
+- **Menu untuk HP**: bilah bawah Beranda · Izin · **Ajukan** · Tindakan · Akun, terjangkau jempol tanpa membuka menu. Daftar izin tampil sebagai kartu.
+- **Menu untuk laptop**: Beranda · Izin · Monitoring · Jenis Izin, tombol **Ajukan izin**, lonceng, dan menu nama pengguna (Profil, Kelola pengguna, Keluar).
+- **Angka merah Tindakan**: jumlah izin yang menunggu keputusan Anda, ditambah izin Anda yang ditolak atau lewat waktu. Halaman Tindakan mengumpulkan semuanya dari yang paling mendesak.
 - **6 jenis izin**: Bekerja di Ketinggian (*Working at Height*), Bekerja di Ruang Terbatas (*Confined Spaces*), Pengangkatan di Atas 1 Ton (*Lifting*), Pengelasan di Luar Workshop (*Hot Work*), Penebangan Pohon (*Land Clearing*), dan Bekerja Dekat Air atau Lumpur (*Working Near Water*). Masing-masing punya halaman sendiri dengan foto, penjelasan, bahaya, pengendalian wajib, dan tombol "Klik di sini untuk Registrasi".
 - **Formulir registrasi**: nama, NIK, nomor WA, departemen, lokasi, uraian pekerjaan, pekerja, identifikasi bahaya, pengendalian, APD, dan uji gas.
 - **Dokumen wajib**: SOP / IK / Standar Parameter, Fit To Work dari Dokter / Klinik, dan JSEA (PDF/Word, maks. 10 MB). Hanya pemohon dan penyetuju yang bisa mengunduhnya.

@@ -21,7 +21,7 @@ const user = usePage<PageProps>().props.auth.user;
                 </p>
                 <div class="mt-5 flex flex-wrap gap-2">
                     <Link :href="route('izin.create')" class="tombol">Registrasi izin</Link>
-                    <Link :href="route('monitoring')" class="tombol-sekunder border-slate-600 bg-transparent text-white hover:bg-white/10">Monitoring & Evaluasi</Link>
+                    <Link v-if="user" :href="route('monitoring')" class="tombol-sekunder border-slate-600 bg-transparent text-white hover:bg-white/10">Monitoring & Evaluasi</Link>
                     <Link v-if="!user" :href="route('register')" class="tombol-sekunder border-slate-600 bg-transparent text-white hover:bg-white/10">Buat akun pekerja</Link>
                 </div>
             </div>

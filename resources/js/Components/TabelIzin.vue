@@ -15,7 +15,34 @@ withDefaults(
 </script>
 
 <template>
-    <div class="overflow-x-auto">
+    <!-- HP: satu kartu per izin, seluruh kartu bisa diketuk -->
+    <ul class="space-y-2 sm:hidden">
+        <li v-for="i in izin" :key="i.id">
+            <Link
+                :href="route(tombol?.rute ?? 'izin.show', i.id)"
+                class="block rounded-lg border border-slate-200 p-3 active:bg-slate-50"
+            >
+                <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                        <div class="font-semibold text-merek-700">{{ i.nomor ?? `Draf #${i.id}` }}</div>
+                        <div class="text-sm font-semibold">{{ i.label_jenis }}</div>
+                    </div>
+                    <StatusBadge v-if="kolom.includes('status')" :status="i.status" :label="i.label_status" :lewat-waktu="i.lewat_waktu" />
+                </div>
+                <div class="mt-1 text-sm text-slate-700">{{ i.lokasi }}</div>
+                <div class="line-clamp-1 text-xs text-slate-500">{{ i.uraian_pekerjaan }}</div>
+                <div class="mt-2 flex items-center justify-between gap-2 text-xs text-slate-500">
+                    <span v-if="kolom.includes('pemohon')">{{ i.pemohon }}</span>
+                    <span v-if="kolom.includes('selesai') || kolom.includes('jadwal')">s.d. {{ tanggalJam(i.selesai_at) }}</span>
+                    <span v-else-if="kolom.includes('diperbarui')">{{ tanggalJam(i.updated_at) }}</span>
+                    <span v-if="tombol" :class="[tombol.sekunder ? 'tombol-sekunder' : 'tombol', 'ml-auto px-3 py-1 text-xs']">{{ tombol.label }}</span>
+                </div>
+            </Link>
+        </li>
+    </ul>
+
+    <!-- Laptop dan tablet: tabel -->
+    <div class="hidden overflow-x-auto sm:block">
         <table class="w-full text-left text-sm">
             <thead>
                 <tr class="border-b border-slate-200 text-xs tracking-wide text-slate-500 uppercase">

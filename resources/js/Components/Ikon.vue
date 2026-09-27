@@ -2,6 +2,12 @@
 // Ikon SVG native (garis 24x24), tanpa pustaka ikon eksternal.
 const jalur: Record<string, string[]> = {
     menu: ['M4 6h16', 'M4 12h16', 'M4 18h16'],
+    lonceng: ['M6 16V11a6 6 0 1 1 12 0v5l2 2H4z', 'M10 20a2 2 0 0 0 4 0'],
+    tambah: ['M12 5v14', 'M5 12h14'],
+    bawah: ['M6 9l6 6 6-6'],
+    kanan: ['M9 6l6 6-6 6'],
+    masuk: ['M10 4H5v16h5', 'M14 16l4-4-4-4', 'M18 12H8'],
+    buku: ['M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z', 'M4 19a2 2 0 0 1 2-2h13'],
     tutup: ['M6 6l12 12', 'M18 6L6 18'],
     rumah: ['M3 11l9-7 9 7', 'M5 10v10h14V10', 'M10 20v-6h4v6'],
     formulir: ['M9 4h6v3H9z', 'M7 5H5v16h14V5h-2', 'M8 11h8', 'M8 15h8', 'M8 19h5'],

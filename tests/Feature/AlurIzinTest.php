@@ -276,3 +276,50 @@ test('setiap jenis izin memakai animasi SVG', function () {
         fn ($jenis) => collect($jenis)->every(fn ($j) => str_contains($j['gambar'], 'img/jenis/'.$j['kunci'].'.svg'))
     ));
 });
+
+test('angka tindakan mengikuti izin yang menunggu tiap orang', function () {
+    $izin = ajukan($this->pemohon, dataIzin());
+    $jumlah = fn ($user) => test()->actingAs($user)->get(route('dasbor'))->inertiaProps('jumlahTindakan');
+
+    expect($jumlah($this->pengawas))->toBe(1)
+        ->and($jumlah($this->hse))->toBe(0)
+        ->and($jumlah($this->pemohon))->toBe(0);
+
+    aksi($this->pengawas, $izin, 'tolak', 'Lengkapi nama fire watch');
+
+    expect($jumlah($this->pengawas))->toBe(0)
+        ->and($jumlah($this->pemohon))->toBe(1, 'Izin yang ditolak menunggu diperbaiki pemohon.');
+});
+
+test('izin aktif yang lewat waktu masuk tindakan pemohon', function () {
+    $izin = ajukan($this->pemohon, dataIzin());
+    foreach ([$this->pengawas, $this->hse, $this->manajer] as $penyetuju) {
+        aksi($penyetuju, $izin, 'setujui');
+    }
+
+    $this->travel(7)->hours();
+
+    $this->actingAs($this->pemohon)->get(route('tindakan'))
+        ->assertInertia(fn (Assert $page) => $page->component('Tindakan')
+            ->has('lewatWaktu', 1)
+            ->where('jumlahTindakan', 1));
+});
+
+test('halaman tindakan menampilkan izin yang menunggu keputusan', function () {
+    $izin = ajukan($this->pemohon, dataIzin());
+
+    $this->actingAs($this->pengawas)->get(route('tindakan'))
+        ->assertInertia(fn (Assert $page) => $page->component('Tindakan')
+            ->has('menungguKeputusan', 1)
+            ->where('menungguKeputusan.0.nomor', $izin->nomor)
+            ->has('perluDiperbaiki', 0));
+});
+
+test('halaman akun bisa dibuka', function () {
+    $this->actingAs($this->pemohon)->get(route('akun'))->assertInertia(fn (Assert $page) => $page->component('Akun'));
+});
+
+test('tamu tidak bisa membuka halaman akun dan tindakan', function () {
+    $this->get(route('akun'))->assertRedirect(route('login'));
+    $this->get(route('tindakan'))->assertRedirect(route('login'));
+});

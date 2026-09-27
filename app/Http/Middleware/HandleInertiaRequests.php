@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\DaftarTindakan;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -48,6 +49,8 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'pesan' => fn () => $request->session()->get('pesan'),
+            // Angka merah di menu Tindakan.
+            'jumlahTindakan' => fn () => $user ? (new DaftarTindakan($user))->jumlah() : 0,
         ];
     }
 }

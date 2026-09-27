@@ -27,7 +27,7 @@ function terapkan() {
                 <h1 class="text-2xl font-bold">Daftar Izin</h1>
                 <p class="text-slate-600">{{ melihatSemua ? 'Semua izin kerja khusus.' : 'Izin yang Anda ajukan.' }}</p>
             </div>
-            <Link :href="route('izin.create')" class="tombol">+ Ajukan izin</Link>
+            <Link :href="route('izin.create')" class="tombol hidden lg:inline-flex">+ Ajukan izin</Link>
         </div>
 
         <form class="panel mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_auto] lg:items-end" @submit.prevent="terapkan">

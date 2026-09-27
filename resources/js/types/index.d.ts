@@ -18,4 +18,5 @@ export type PageProps<
         user: User | null;
     };
     pesan: string | null;
+    jumlahTindakan: number;
 };

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\IzinKerja;
+use App\Support\DaftarTindakan;
+use App\Support\Katalog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,37 +16,21 @@ class DasborController extends Controller
         $user = $request->user();
         $terlihat = IzinKerja::terlihatOleh($user);
 
-        // Tahap yang sedang menunggu keputusan peran pengguna ini.
-        $tahapSaya = collect(config('izin.tahap_persetujuan'))
-            ->filter(fn ($tahap) => $tahap['peran'] === $user->peran)
-            ->keys()
-            ->all();
-
-        if ($user->adalah('pengawas')) {
-            $tahapSaya[] = 'menunggu_penutupan';
-        }
-
-        $perluTindakan = IzinKerja::with('pemohon')
-            ->whereIn('status', $tahapSaya)
-            ->where('pemohon_id', '!=', $user->id)
-            ->orderBy('diajukan_at')
-            ->get();
+        $tindakan = new DaftarTindakan($user);
+        $perluTindakan = $tindakan->menungguKeputusan();
 
         $aktif = (clone $terlihat)->with('pemohon')
             ->where('status', 'aktif')
             ->orderBy('selesai_at')
             ->get();
 
-        $izinSaya = IzinKerja::with('pemohon')
-            ->where('pemohon_id', $user->id)
-            ->whereIn('status', ['draf', 'ditolak'])
-            ->latest('updated_at')
-            ->get();
+        $izinSaya = $tindakan->perluDiperbaiki()->concat($tindakan->draf());
 
         return Inertia::render('Dasbor', [
             'perluTindakan' => $perluTindakan->map->ringkas(),
             'aktif' => $aktif->map->ringkas(),
             'izinSaya' => $izinSaya->map->ringkas(),
+            'jenis' => collect(Katalog::jenis())->map(fn ($j) => collect($j)->only('kunci', 'label', 'label_en', 'gambar')),
             'ringkasan' => [
                 'aktif' => $aktif->count(),
                 'lewat_waktu' => $aktif->filter->lewatWaktu()->count(),

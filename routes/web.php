@@ -7,6 +7,7 @@ use App\Http\Controllers\IzinKerjaController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TindakanController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [BerandaController::class, 'index'])->name('beranda');
@@ -14,6 +15,8 @@ Route::get('/jenis/{jenis}', [BerandaController::class, 'jenis'])->name('jenis.s
 
 Route::middleware('auth')->group(function () {
     Route::get('/dasbor', DasborController::class)->name('dasbor');
+    Route::get('/tindakan', TindakanController::class)->name('tindakan');
+    Route::inertia('/akun', 'Akun')->name('akun');
 
     Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring');
     Route::get('/monitoring/ekspor', [MonitoringController::class, 'ekspor'])->name('monitoring.ekspor');
