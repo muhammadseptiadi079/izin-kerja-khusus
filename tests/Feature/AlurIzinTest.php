@@ -270,9 +270,13 @@ test('pencarian daftar izin tidak peka huruf besar kecil', function () {
         ->assertInertia(fn (Assert $page) => $page->has('izin.data', 1)->where('izin.data.0.nomor', $izin->nomor));
 });
 
-test('setiap jenis izin memakai animasi SVG', function () {
+test('foto jenis izin didahulukan, animasi SVG dipakai bila foto tidak ada', function () {
     $this->get(route('beranda'))->assertInertia(fn (Assert $page) => $page->where(
         'jenis',
-        fn ($jenis) => collect($jenis)->every(fn ($j) => str_contains($j['gambar'], 'img/jenis/'.$j['kunci'].'.svg'))
+        fn ($jenis) => collect($jenis)->every(function ($j) {
+            $ekstensi = in_array($j['kunci'], ['penebangan_pohon', 'dekat_air'], true) ? 'svg' : 'jpg';
+
+            return str_contains($j['gambar'], 'img/jenis/'.$j['kunci'].'.'.$ekstensi);
+        })
     ));
 });

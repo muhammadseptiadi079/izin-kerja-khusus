@@ -92,7 +92,7 @@ Semua jenis izin, penjelasan, bahaya, pengendalian, **daftar lokasi**, **daftar 
 
 ### Gambar jenis izin
 
-Setiap jenis izin memakai **animasi SVG** di `public/img/jenis/` (`ketinggian.svg`, `ruang_terbatas.svg`, `pengangkatan.svg`, `kerja_panas.svg`, `penebangan_pohon.svg`, `dekat_air.svg`). Animasi otomatis berhenti bila pengguna memilih "kurangi gerakan" di perangkatnya.
+Gambar ada di `public/img/jenis/`. Saat ini Ketinggian, Ruang Terbatas, Pengangkatan, dan Pengelasan memakai foto sementara (`.jpg`); semua jenis juga punya **animasi SVG** (`ketinggian.svg`, `ruang_terbatas.svg`, `pengangkatan.svg`, `kerja_panas.svg`, `penebangan_pohon.svg`, `dekat_air.svg`). Animasi otomatis berhenti bila pengguna memilih "kurangi gerakan" di perangkatnya.
 
 Untuk memakai foto sendiri, taruh berkas `.jpg`, `.png`, atau `.webp` dengan nama yang sama (misalnya `kerja_panas.jpg`); foto otomatis didahulukan dari animasi. Ukuran yang disarankan 1280×720 (16:9).
 
