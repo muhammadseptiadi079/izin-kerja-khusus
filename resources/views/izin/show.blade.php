@@ -76,7 +76,10 @@
         <h2>Rincian pekerjaan</h2>
         <dl class="rincian">
             <dt>Pemohon</dt><dd>{{ $izin->pemohon->name }}{{ $izin->pemohon->jabatan ? ' · '.$izin->pemohon->jabatan : '' }}</dd>
-            <dt>Lokasi</dt><dd>{{ $izin->lokasi }}</dd>
+            <dt>NIK</dt><dd>{{ $izin->nik }}</dd>
+            <dt>Nomor WA</dt><dd><a href="https://wa.me/{{ preg_replace('/^0/', '62', preg_replace('/\D/', '', $izin->nomor_wa)) }}" target="_blank" rel="noopener">{{ $izin->nomor_wa }}</a></dd>
+            <dt>Departemen</dt><dd>{{ $izin->departemen }}</dd>
+            <dt>Lokasi</dt><dd>{{ $izin->lokasiLengkap() }}</dd>
             <dt>Pekerjaan</dt><dd>{{ $izin->uraian_pekerjaan }}</dd>
             <dt>Peralatan</dt><dd>{{ $izin->peralatan ?: '—' }}</dd>
             <dt>Mulai</dt><dd>{{ $izin->mulai_at->translatedFormat('l, d M Y H:i') }}</dd>
@@ -126,6 +129,21 @@
             <p class="small muted">Diuji oleh {{ $izin->uji_gas_oleh ?: '—' }}{{ $izin->uji_gas_at ? ', '.$izin->uji_gas_at->translatedFormat('d M Y H:i') : '' }}</p>
         @endif
     </div>
+</div>
+
+<div class="panel">
+    <h2>Dokumen pendukung</h2>
+    @foreach (config('izin.dokumen') as $kunci => $label)
+        @php $dok = $izin->dokumenJenis($kunci); @endphp
+        <div class="dokumen-baris">
+            <strong>{{ $label }}</strong>
+            @if ($dok)
+                <a class="tombol kecil sekunder" href="{{ route('izin.dokumen', [$izin, $kunci]) }}">Unduh {{ $dok->nama_asli }} ({{ $dok->ukuranTerbaca() }})</a>
+            @else
+                <span class="lencana ditolak">Belum diunggah</span>
+            @endif
+        </div>
+    @endforeach
 </div>
 
 <div class="panel">

@@ -62,10 +62,12 @@ class PenggunaController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($pengguna)],
             'peran' => ['required', Rule::in(array_keys(User::PERAN))],
+            'nik' => ['nullable', 'string', 'max:50', Rule::unique('users')->ignore($pengguna)],
+            'nomor_wa' => ['nullable', 'string', 'max:20'],
             'jabatan' => ['nullable', 'string', 'max:255'],
-            'departemen' => ['nullable', 'string', 'max:255'],
+            'departemen' => ['nullable', Rule::in(config('izin.departemen'))],
             'password' => [$pengguna ? 'nullable' : 'required', Password::min(8)],
-        ], [], ['name' => 'nama', 'password' => 'kata sandi']);
+        ], [], ['name' => 'nama', 'nik' => 'NIK', 'nomor_wa' => 'nomor WA', 'password' => 'kata sandi']);
 
         $data['aktif'] = $request->boolean('aktif');
 

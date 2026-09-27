@@ -28,22 +28,56 @@
     @endif
 @endif
 
-<form method="post" action="{{ $izin->exists ? route('izin.update', $izin) : route('izin.store') }}">
+<form method="post" enctype="multipart/form-data" action="{{ $izin->exists ? route('izin.update', $izin) : route('izin.store') }}">
     @csrf
     @if ($izin->exists) @method('put') @endif
     <input type="hidden" name="jenis" value="{{ $izin->jenis }}">
 
     <div class="panel">
-        <h2>1. Pekerjaan</h2>
+        <h2>1. Data pemohon</h2>
         <div class="grid grid-2">
             <div class="bidang">
-                <label for="lokasi">Lokasi kerja</label>
-                <input type="text" id="lokasi" name="lokasi" value="{{ old('lokasi', $izin->lokasi) }}" required placeholder="Contoh: Workshop Pit 3, Tangki T-201">
+                <label for="nama">Nama / <em>Your name</em></label>
+                <input type="text" id="nama" value="{{ $izin->pemohon->name ?? auth()->user()->name }}" readonly>
+                <div class="bantuan">Diambil dari akun Anda.</div>
             </div>
             <div class="bidang">
-                <label for="peralatan">Peralatan yang digunakan</label>
-                <input type="text" id="peralatan" name="peralatan" value="{{ old('peralatan', $izin->peralatan) }}" placeholder="Mesin las, gerinda, scaffolding, dll.">
+                <label for="nik">NIK / <em>Your ID</em></label>
+                <input type="text" id="nik" name="nik" value="{{ old('nik', $izin->nik) }}" required>
             </div>
+            <div class="bidang">
+                <label for="nomor_wa">Nomor WA / <em>WhatsApp</em></label>
+                <input type="text" id="nomor_wa" name="nomor_wa" value="{{ old('nomor_wa', $izin->nomor_wa) }}" required inputmode="tel" placeholder="08xxxxxxxxxx">
+                <div class="bantuan">Dipakai untuk menghubungi Anda terkait izin ini.</div>
+            </div>
+            <div class="bidang">
+                <label for="departemen">Departemen pelapor / <em>Your department</em></label>
+                <select id="departemen" name="departemen" required>
+                    <option value="">Pilih</option>
+                    @foreach (config('izin.departemen') as $d)<option @selected(old('departemen', $izin->departemen) === $d)>{{ $d }}</option>@endforeach
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>2. Pekerjaan</h2>
+        <div class="grid grid-2">
+            <div class="bidang">
+                <label for="lokasi">Lokasi / <em>Location</em></label>
+                <select id="lokasi" name="lokasi" required>
+                    <option value="">Pilih</option>
+                    @foreach (config('izin.lokasi') as $l)<option @selected(old('lokasi', $izin->lokasi) === $l)>{{ $l }}</option>@endforeach
+                </select>
+            </div>
+            <div class="bidang">
+                <label for="lokasi_detail">Detail lokasi</label>
+                <input type="text" id="lokasi_detail" name="lokasi_detail" value="{{ old('lokasi_detail', $izin->lokasi_detail) }}" placeholder="Contoh: Front loading blok B, tangki T-201">
+            </div>
+        </div>
+        <div class="bidang">
+            <label for="peralatan">Peralatan yang digunakan</label>
+            <input type="text" id="peralatan" name="peralatan" value="{{ old('peralatan', $izin->peralatan) }}" placeholder="Mesin las, chainsaw, crane 50 ton, dll.">
         </div>
         <div class="bidang">
             <label for="uraian_pekerjaan">Uraian pekerjaan</label>
@@ -67,7 +101,7 @@
     </div>
 
     <div class="panel">
-        <h2>2. Identifikasi bahaya</h2>
+        <h2>3. Identifikasi bahaya</h2>
         @foreach ($aturan['bahaya'] as $item)
             <label class="centang"><input type="checkbox" name="bahaya[]" value="{{ $item }}" @checked(in_array($item, $bahaya))> {{ $item }}</label>
         @endforeach
@@ -78,7 +112,7 @@
     </div>
 
     <div class="panel">
-        <h2>3. Pengendalian wajib</h2>
+        <h2>4. Pengendalian wajib</h2>
         <p class="muted small">Semua butir harus sudah dipastikan di lapangan sebelum izin dapat diajukan.</p>
         @foreach ($aturan['pengendalian'] as $item)
             <label class="centang"><input type="checkbox" name="pengendalian[]" value="{{ $item }}" @checked(in_array($item, $pengendalian))> {{ $item }}</label>
@@ -90,7 +124,7 @@
     </div>
 
     <div class="panel">
-        <h2>4. Alat pelindung diri (APD)</h2>
+        <h2>5. Alat pelindung diri (APD)</h2>
         <div class="grid grid-3">
             @foreach (config('izin.apd') as $item)
                 <label class="centang"><input type="checkbox" name="apd[]" value="{{ $item }}" @checked(in_array($item, $apd))> {{ $item }}</label>
@@ -100,7 +134,7 @@
 
     @if ($aturan['uji_gas'])
     <div class="panel">
-        <h2>5. Uji gas</h2>
+        <h2>6. Uji gas</h2>
         <p class="muted small">Izin tidak dapat diajukan bila salah satu hasil di luar batas aman.</p>
         <div class="grid grid-4">
             @foreach (config('izin.uji_gas') as $kunci => $batas)
@@ -123,6 +157,28 @@
         </div>
     </div>
     @endif
+
+    <div class="panel">
+        <h2>Dokumen pendukung</h2>
+        <p class="muted small">Unggah 1 berkas PDF atau Word untuk masing-masing, maksimal {{ config('izin.dokumen_maks_kb') / 1024 }} MB. Ketiganya wajib sebelum izin bisa diajukan.</p>
+        @foreach (config('izin.dokumen') as $kunci => $label)
+            @php $ada = $izin->exists ? $izin->dokumen->firstWhere('jenis', $kunci) : null; @endphp
+            <div class="dokumen-baris">
+                <div>
+                    <strong>{{ $label }}</strong>
+                    <div class="small {{ $ada ? '' : 'muted' }}">
+                        @if ($ada)
+                            ✅ <a href="{{ route('izin.dokumen', [$izin, $kunci]) }}">{{ $ada->nama_asli }}</a> ({{ $ada->ukuranTerbaca() }}). Pilih berkas baru untuk mengganti.
+                        @else
+                            Belum diunggah
+                        @endif
+                    </div>
+                    @error('dokumen.'.$kunci)<div class="teks-galat">{{ $message }}</div>@enderror
+                </div>
+                <input type="file" name="dokumen[{{ $kunci }}]" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            </div>
+        @endforeach
+    </div>
 
     <div class="panel baris-tombol">
         <button class="tombol" type="submit" name="ajukan" value="1">Simpan & ajukan</button>

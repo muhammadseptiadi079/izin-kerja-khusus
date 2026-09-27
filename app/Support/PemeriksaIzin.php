@@ -6,7 +6,7 @@ use App\Models\IzinKerja;
 
 /**
  * Memeriksa apakah izin sudah layak diajukan: semua pengendalian wajib
- * dicentang, durasi tidak melebihi batas jenisnya, dan uji gas aman.
+ * dicentang, dokumen pendukung lengkap, durasi tidak melebihi batas jenisnya, dan uji gas aman.
  */
 class PemeriksaIzin
 {
@@ -23,6 +23,13 @@ class PemeriksaIzin
 
         if (empty($izin->apd)) {
             $masalah[] = 'Pilih minimal satu APD yang wajib dipakai.';
+        }
+
+        $diunggah = $izin->dokumen()->pluck('jenis')->all();
+        foreach (config('izin.dokumen') as $kunci => $label) {
+            if (! in_array($kunci, $diunggah, true)) {
+                $masalah[] = 'Dokumen '.$label.' belum diunggah.';
+            }
         }
 
         if ($izin->selesai_at->lte($izin->mulai_at)) {

@@ -47,6 +47,21 @@ class IzinKerja extends Model
         return $this->belongsTo(User::class, 'pemohon_id');
     }
 
+    public function dokumen(): HasMany
+    {
+        return $this->hasMany(DokumenIzin::class);
+    }
+
+    public function dokumenJenis(string $jenis): ?DokumenIzin
+    {
+        return $this->dokumen->firstWhere('jenis', $jenis);
+    }
+
+    public function lokasiLengkap(): string
+    {
+        return $this->lokasi.($this->lokasi_detail ? ' — '.$this->lokasi_detail : '');
+    }
+
     public function riwayat(): HasMany
     {
         return $this->hasMany(RiwayatIzin::class)->orderBy('created_at')->orderBy('id');

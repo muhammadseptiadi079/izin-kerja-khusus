@@ -137,3 +137,20 @@ nav[role=navigation] svg { width: 1rem; height: 1rem; }
   dl.rincian { grid-template-columns: 1fr; }
   dl.rincian dt { margin-top: .4rem; }
 }
+
+.hero { background: linear-gradient(135deg, #1d2433 0%, #3b2a1f 100%); color: #fff; border-radius: var(--radius); padding: 2rem 1.5rem; margin-bottom: 1.25rem; }
+.hero h1 { font-size: 1.9rem; margin-bottom: .5rem; }
+.hero p { color: #d7dbe3; max-width: 640px; }
+.hero .hero-kecil { text-transform: uppercase; letter-spacing: .08em; font-size: .8rem; color: #fdba74; margin: 0 0 .5rem; }
+.hero .tombol.sekunder { background: transparent; color: #fff; border-color: #6b7488; }
+
+table.rekap td { border: 0; padding: .3rem .25rem; }
+table.rekap .batang-sel { width: 45%; }
+table.rekap .batang { display: block; height: 12px; border-radius: 6px; background: var(--brand); min-width: 4px; }
+table.rekap .angka-sel { width: 3rem; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.dokumen-baris { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: .6rem 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.dokumen-baris:last-child { border-bottom: 0; }
+input[type=file] { font: inherit; max-width: 100%; }
+input[type=date] { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff; color: var(--ink); }
+input[readonly] { background: var(--neutral-bg); }

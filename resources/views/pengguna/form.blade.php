@@ -17,8 +17,16 @@
         </select>
     </div>
     <div class="grid grid-2">
+        <div class="bidang"><label for="nik">NIK</label><input type="text" id="nik" name="nik" value="{{ old('nik', $pengguna->nik) }}"></div>
+        <div class="bidang"><label for="nomor_wa">Nomor WA</label><input type="text" id="nomor_wa" name="nomor_wa" value="{{ old('nomor_wa', $pengguna->nomor_wa) }}"></div>
         <div class="bidang"><label for="jabatan">Jabatan</label><input type="text" id="jabatan" name="jabatan" value="{{ old('jabatan', $pengguna->jabatan) }}"></div>
-        <div class="bidang"><label for="departemen">Departemen</label><input type="text" id="departemen" name="departemen" value="{{ old('departemen', $pengguna->departemen) }}"></div>
+        <div class="bidang">
+            <label for="departemen">Departemen</label>
+            <select id="departemen" name="departemen">
+                <option value="">—</option>
+                @foreach (config('izin.departemen') as $d)<option @selected(old('departemen', $pengguna->departemen) === $d)>{{ $d }}</option>@endforeach
+            </select>
+        </div>
     </div>
     <div class="bidang">
         <label for="password">Kata sandi</label>

@@ -14,7 +14,11 @@ return new class extends Migration
             $table->string('jenis');
             $table->foreignId('pemohon_id')->constrained('users');
             $table->string('status')->default('draf')->index();
+            $table->string('nik');
+            $table->string('nomor_wa');
+            $table->string('departemen');
             $table->string('lokasi');
+            $table->string('lokasi_detail')->nullable();
             $table->text('uraian_pekerjaan');
             $table->text('peralatan')->nullable();
             $table->text('pekerja');
@@ -35,6 +39,17 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('dokumen_izin', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('izin_kerja_id')->constrained('izin_kerja')->cascadeOnDelete();
+            $table->string('jenis');
+            $table->string('nama_asli');
+            $table->string('path');
+            $table->unsignedInteger('ukuran');
+            $table->timestamps();
+            $table->unique(['izin_kerja_id', 'jenis']);
+        });
+
         Schema::create('riwayat_izin', function (Blueprint $table) {
             $table->id();
             $table->foreignId('izin_kerja_id')->constrained('izin_kerja')->cascadeOnDelete();
@@ -50,6 +65,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('riwayat_izin');
+        Schema::dropIfExists('dokumen_izin');
         Schema::dropIfExists('izin_kerja');
     }
 };

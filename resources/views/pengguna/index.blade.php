@@ -11,11 +11,12 @@
 </div>
 <div class="panel tabel-gulir">
     <table>
-        <thead><tr><th>Nama</th><th>Email</th><th>Peran</th><th>Jabatan / Departemen</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Nama</th><th>NIK</th><th>Email</th><th>Peran</th><th>Jabatan / Departemen</th><th>Status</th><th></th></tr></thead>
         <tbody>
         @foreach ($pengguna as $orang)
             <tr>
                 <td>{{ $orang->name }}</td>
+                <td>{{ $orang->nik ?: '—' }}</td>
                 <td>{{ $orang->email }}</td>
                 <td>{{ $orang->labelPeran() }}</td>
                 <td>{{ collect([$orang->jabatan, $orang->departemen])->filter()->implode(' · ') ?: '—' }}</td>

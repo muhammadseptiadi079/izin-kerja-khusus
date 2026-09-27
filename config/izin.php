@@ -12,29 +12,30 @@
 return [
 
     'jenis' => [
-        'kerja_panas' => [
-            'label' => 'Kerja Panas',
-            'kode' => 'KP',
-            'deskripsi' => 'Pengelasan, pemotongan, gerinda, atau pekerjaan lain yang menimbulkan api atau percikan.',
+        'ketinggian' => [
+            'label' => 'Bekerja di Ketinggian',
+            'label_en' => 'Working at Height',
+            'kode' => 'KT',
+            'deskripsi' => 'Pekerjaan pada ketinggian 1,8 m atau lebih dari lantai kerja.',
             'durasi_maks_jam' => 12,
-            'uji_gas' => true,
+            'uji_gas' => false,
             'bahaya' => [
-                'Percikan api mengenai bahan mudah terbakar',
-                'Uap/gas mudah terbakar di sekitar area',
-                'Asap dan fume pengelasan',
-                'Luka bakar',
-                'Sengatan listrik mesin las',
+                'Jatuh dari ketinggian',
+                'Benda jatuh menimpa orang di bawah',
+                'Perancah atau tangga runtuh',
+                'Angin kencang atau cuaca buruk',
             ],
             'pengendalian' => [
-                'Bahan mudah terbakar dalam radius 11 m dipindahkan atau ditutup selimut api',
-                'APAR siap pakai di lokasi',
-                'Petugas pengawas api (fire watch) ditunjuk dan berada di lokasi',
-                'Fire watch tetap berjaga minimal 30 menit setelah pekerjaan selesai',
-                'Kabel dan mesin las diperiksa dalam kondisi baik',
+                'Full body harness dengan double lanyard dipakai dan dikaitkan 100%',
+                'Titik tambat (anchor) mampu menahan beban jatuh',
+                'Perancah sudah diinspeksi dan bertanda hijau',
+                'Area di bawah diberi barikade dan rambu',
+                'Alat dan material diikat agar tidak jatuh',
             ],
         ],
         'ruang_terbatas' => [
-            'label' => 'Ruang Terbatas',
+            'label' => 'Bekerja di Ruang Terbatas',
+            'label_en' => 'Confined Spaces',
             'kode' => 'RT',
             'deskripsi' => 'Masuk ke tangki, bejana, saluran, sumur, atau ruang dengan akses keluar-masuk terbatas.',
             'durasi_maks_jam' => 8,
@@ -55,69 +56,11 @@ return [
                 'Daftar orang masuk-keluar dicatat',
             ],
         ],
-        'ketinggian' => [
-            'label' => 'Bekerja di Ketinggian',
-            'kode' => 'KT',
-            'deskripsi' => 'Pekerjaan pada ketinggian 1,8 m atau lebih dari lantai kerja.',
-            'durasi_maks_jam' => 12,
-            'uji_gas' => false,
-            'bahaya' => [
-                'Jatuh dari ketinggian',
-                'Benda jatuh menimpa orang di bawah',
-                'Perancah atau tangga runtuh',
-                'Angin kencang atau cuaca buruk',
-            ],
-            'pengendalian' => [
-                'Full body harness dengan double lanyard dipakai dan dikaitkan 100%',
-                'Titik tambat (anchor) mampu menahan beban jatuh',
-                'Perancah sudah diinspeksi dan bertanda hijau',
-                'Area di bawah diberi barikade dan rambu',
-                'Alat dan material diikat agar tidak jatuh',
-            ],
-        ],
-        'isolasi_energi' => [
-            'label' => 'Isolasi Energi / Listrik',
-            'kode' => 'IE',
-            'deskripsi' => 'Pekerjaan pada instalasi listrik, hidrolik, pneumatik, atau mesin yang harus diisolasi (LOTO).',
-            'durasi_maks_jam' => 12,
-            'uji_gas' => false,
-            'bahaya' => [
-                'Sengatan listrik',
-                'Busur api listrik (arc flash)',
-                'Mesin bergerak tiba-tiba',
-                'Energi tersimpan (tekanan, pegas, kapasitor)',
-            ],
-            'pengendalian' => [
-                'Sumber energi diidentifikasi dan diisolasi',
-                'Gembok dan tag LOTO terpasang oleh setiap pekerja',
-                'Uji nol energi (try-out) dilakukan sebelum bekerja',
-                'Energi tersimpan dilepaskan',
-                'Pekerja kompeten dan berwenang untuk pekerjaan listrik',
-            ],
-        ],
-        'penggalian' => [
-            'label' => 'Penggalian',
-            'kode' => 'PG',
-            'deskripsi' => 'Penggalian atau pengeboran tanah yang dapat mengenai utilitas bawah tanah.',
-            'durasi_maks_jam' => 12,
-            'uji_gas' => false,
-            'bahaya' => [
-                'Dinding galian longsor',
-                'Mengenai kabel listrik atau pipa bawah tanah',
-                'Orang atau alat jatuh ke galian',
-                'Genangan air di galian',
-            ],
-            'pengendalian' => [
-                'Gambar utilitas bawah tanah diperiksa dan dideteksi',
-                'Dinding galian dilandaikan atau diberi penahan',
-                'Material galian ditempatkan minimal 1 m dari tepi',
-                'Barikade dan akses keluar-masuk galian tersedia',
-            ],
-        ],
-        'angkat_berat' => [
-            'label' => 'Pengangkatan Kritis',
-            'kode' => 'AK',
-            'deskripsi' => 'Pengangkatan dengan crane di atas 75% kapasitas, dua crane, atau di atas area berpenghuni/berenergi.',
+        'pengangkatan' => [
+            'label' => 'Pengangkatan di Atas 1 Ton',
+            'label_en' => 'Lifting Above 1 Ton',
+            'kode' => 'PA',
+            'deskripsi' => 'Pengangkatan beban lebih dari 1 ton dengan crane, hoist, atau alat angkat lainnya.',
             'durasi_maks_jam' => 12,
             'uji_gas' => false,
             'bahaya' => [
@@ -129,12 +72,115 @@ return [
             'pengendalian' => [
                 'Rencana pengangkatan (lifting plan) disetujui',
                 'Operator dan rigger bersertifikat',
-                'Alat angkat dan sling diinspeksi',
+                'Alat angkat dan sling diinspeksi dan layak pakai',
                 'Area radius ayun diberi barikade',
                 'Kecepatan angin di bawah batas operasi crane',
             ],
         ],
+        'kerja_panas' => [
+            'label' => 'Pengelasan di Luar Workshop',
+            'label_en' => 'Welding Outside the Workshop (Hot Work)',
+            'kode' => 'KP',
+            'deskripsi' => 'Pengelasan, pemotongan, gerinda, atau kerja panas lain yang dilakukan di luar workshop.',
+            'durasi_maks_jam' => 12,
+            'uji_gas' => true,
+            'bahaya' => [
+                'Percikan api mengenai bahan mudah terbakar',
+                'Uap/gas mudah terbakar di sekitar area',
+                'Asap dan fume pengelasan',
+                'Luka bakar',
+                'Sengatan listrik mesin las',
+            ],
+            'pengendalian' => [
+                'Bahan mudah terbakar dalam radius 11 m dipindahkan atau ditutup selimut api',
+                'APAR siap pakai di lokasi',
+                'Petugas pengawas api (fire watch) ditunjuk dan berada di lokasi',
+                'Fire watch tetap berjaga minimal 30 menit setelah pekerjaan selesai',
+                'Kabel dan mesin las diperiksa dalam kondisi baik',
+            ],
+        ],
+        'penebangan_pohon' => [
+            'label' => 'Penebangan Pohon',
+            'label_en' => 'Land Clearing',
+            'kode' => 'LC',
+            'deskripsi' => 'Penebangan pohon dan pembersihan lahan secara manual atau dengan alat berat.',
+            'durasi_maks_jam' => 12,
+            'uji_gas' => false,
+            'bahaya' => [
+                'Tertimpa pohon atau dahan tumbang',
+                'Terkena chainsaw',
+                'Alat berat terguling di lereng',
+                'Binatang berbisa (ular, lebah)',
+                'Pohon mengenai jaringan listrik',
+            ],
+            'pengendalian' => [
+                'Arah rebah pohon ditentukan dan jalur penyelamatan diri disiapkan',
+                'Zona bahaya minimal 2 kali tinggi pohon dikosongkan dari orang',
+                'Operator chainsaw kompeten dan memakai chaps/pelindung kaki',
+                'Jaringan listrik di sekitar sudah diperiksa atau dimatikan',
+                'Kotak P3K dan penanganan gigitan binatang tersedia',
+            ],
+        ],
+        'dekat_air' => [
+            'label' => 'Bekerja Dekat Air atau Lumpur',
+            'label_en' => 'Working Near Water',
+            'kode' => 'DA',
+            'deskripsi' => 'Pekerjaan di tepi atau di atas sump, kolam pengendapan, sungai, atau area berlumpur.',
+            'durasi_maks_jam' => 12,
+            'uji_gas' => false,
+            'bahaya' => [
+                'Tenggelam',
+                'Terjebak lumpur',
+                'Tanah tepi longsor',
+                'Alat atau unit tergelincir ke air',
+                'Arus air deras',
+            ],
+            'pengendalian' => [
+                'Pelampung (life jacket) dipakai oleh semua pekerja',
+                'Ring buoy dan tali penyelamat tersedia di lokasi',
+                'Tepi air diberi tanggul/pembatas dan rambu',
+                'Kestabilan tanah tepi diperiksa sebelum unit mendekat',
+                'Pekerjaan tidak dilakukan sendirian (minimal berdua)',
+            ],
+        ],
     ],
+
+    /*
+     * Pilihan lokasi dan departemen. Ganti dengan daftar di site Anda.
+     */
+    'lokasi' => [
+        'Pit 1',
+        'Pit 2',
+        'Pit 3',
+        'Disposal',
+        'Hauling Road',
+        'Port / Jetty',
+        'Workshop',
+        'Mess & Office',
+        'Sump / Settling Pond',
+        'Lainnya',
+    ],
+
+    'departemen' => [
+        'Produksi',
+        'Plant / Maintenance',
+        'Engineering',
+        'HSE',
+        'Logistik',
+        'HRGA',
+        'Kontraktor',
+    ],
+
+    /*
+     * Dokumen pendukung yang wajib diunggah sebelum izin bisa diajukan.
+     */
+    'dokumen' => [
+        'sop' => 'SOP / IK / Standar Parameter',
+        'fit_to_work' => 'Fit To Work dari Dokter / Klinik',
+        'jsea' => 'Job Safety Environmental Analysis (JSEA)',
+    ],
+    'dokumen_maks_kb' => 10240,
+    'dokumen_ekstensi' => ['pdf', 'doc', 'docx'],
 
     // Batas aman uji gas. Nilai di luar rentang membuat izin tidak dapat diajukan.
     'uji_gas' => [
@@ -155,6 +201,8 @@ return [
         'Topeng las',
         'Full body harness',
         'Pakaian tahan api',
+        'Pelampung (life jacket)',
+        'Chaps / pelindung kaki chainsaw',
     ],
 
     // Urutan persetujuan. Setiap tahap diputuskan oleh pengguna dengan peran itu.

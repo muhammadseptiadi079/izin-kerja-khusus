@@ -2,13 +2,18 @@
 
 Web app untuk mengajukan, menyetujui, dan menutup **izin kerja khusus** untuk pekerjaan berisiko tinggi, dibangun dengan Laravel.
 
-![Detail izin aktif](docs/tangkapan/06-aktif.png)
+![Halaman Home](docs/tangkapan/01-beranda.png)
 
 ## Fitur
 
-- **6 jenis izin**: Kerja Panas, Ruang Terbatas, Bekerja di Ketinggian, Isolasi Energi/Listrik (LOTO), Penggalian, dan Pengangkatan Kritis. Setiap jenis punya daftar bahaya, pengendalian wajib, dan durasi maksimal sendiri.
+- **Menu Home, Registrasi, dan Monitoring & Evaluasi**, sama seperti situs IKK sebelumnya.
+- **6 jenis izin**: Bekerja di Ketinggian (*Working at Height*), Bekerja di Ruang Terbatas (*Confined Spaces*), Pengangkatan di Atas 1 Ton (*Lifting*), Pengelasan di Luar Workshop (*Hot Work*), Penebangan Pohon (*Land Clearing*), dan Bekerja Dekat Air atau Lumpur (*Working Near Water*). Setiap jenis punya daftar bahaya, pengendalian wajib, dan durasi maksimal sendiri.
+- **Data pemohon**: nama, NIK, nomor WA, departemen pelapor, dan lokasi (pilihan).
+- **Dokumen wajib**: SOP / IK / Standar Parameter, Fit To Work dari Dokter / Klinik, dan JSEA. Format PDF atau Word, maksimal 10 MB. Dokumen hanya bisa diunduh oleh pemohon dan penyetuju.
+- **Buat akun pekerja** sendiri (otomatis sebagai pemohon). Peran penyetuju hanya diberikan admin.
+- **Monitoring & Evaluasi**: rekap per jenis, lokasi, departemen, status, dan hari; tingkat penutupan, izin yang pernah ditolak, stop work, rata-rata waktu persetujuan; unduh CSV untuk Excel.
 - **Pengendalian wajib**: izin tidak bisa diajukan sebelum semua butir pengendalian dicentang dan minimal satu APD dipilih.
-- **Uji gas**: untuk Kerja Panas dan Ruang Terbatas, hasil O₂, LEL, H₂S, dan CO wajib diisi dan harus berada dalam batas aman.
+- **Uji gas**: untuk Pengelasan di Luar Workshop dan Ruang Terbatas, hasil O₂, LEL, H₂S, dan CO wajib diisi dan harus berada dalam batas aman.
 - **Persetujuan berjenjang**: Pengawas Area → HSE → Manajer/Penanggung Jawab. Setiap tahap hanya bisa diputuskan oleh peran yang sesuai, dan **pemohon tidak bisa menyetujui izinnya sendiri**.
 - **Penolakan dengan catatan**: pemohon memperbaiki lalu mengajukan ulang dengan nomor izin yang sama.
 - **Stop work**: Pengawas, HSE, atau Manajer bisa menghentikan izin aktif kapan saja.
@@ -62,7 +67,7 @@ Untuk MySQL, ubah `DB_CONNECTION=mysql` dan isi `DB_HOST`, `DB_DATABASE`, `DB_US
 
 ## Menyesuaikan aturan
 
-Semua jenis izin, bahaya, pengendalian, batas uji gas, daftar APD, dan urutan persetujuan ada di [`config/izin.php`](config/izin.php). Ubah di sana tanpa perlu menyentuh kode lain.
+Semua jenis izin, bahaya, pengendalian, **daftar lokasi**, **daftar departemen**, dokumen wajib, batas uji gas, daftar APD, dan urutan persetujuan ada di [`config/izin.php`](config/izin.php). Ubah di sana tanpa perlu menyentuh kode lain.
 
 ## Pengujian
 
@@ -72,8 +77,8 @@ php artisan test
 
 ## Tangkapan layar
 
-| Pilih jenis izin | Formulir |
+| Registrasi izin | Izin aktif |
 | --- | --- |
-| ![](docs/tangkapan/02-pilih.png) | ![](docs/tangkapan/03-form.png) |
-| **Dasbor Pengawas** | **Cetak izin** |
-| ![](docs/tangkapan/05-dasbor-pengawas.png) | ![](docs/tangkapan/07-cetak.png) |
+| ![](docs/tangkapan/02-registrasi.png) | ![](docs/tangkapan/03-izin-aktif.png) |
+| **Monitoring & Evaluasi** | **Cetak izin** |
+| ![](docs/tangkapan/04-monitoring.png) | ![](docs/tangkapan/05-cetak.png) |

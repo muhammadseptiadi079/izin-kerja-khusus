@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\IzinKerja;
 use App\Support\AlurIzin;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -38,8 +39,12 @@ class IzinKerjaController extends Controller
             return view('izin.pilih-jenis');
         }
 
+        $user = $request->user();
         $izin = new IzinKerja([
             'jenis' => $jenis,
+            'nik' => $user->nik,
+            'nomor_wa' => $user->nomor_wa,
+            'departemen' => $user->departemen,
             'mulai_at' => now()->addHour()->startOfHour(),
             'selesai_at' => now()->addHours(9)->startOfHour(),
         ]);
@@ -53,6 +58,7 @@ class IzinKerjaController extends Controller
         $izin->pemohon_id = $request->user()->id;
         $izin->status = 'draf';
         $izin->save();
+        $this->simpanDokumen($request, $izin);
 
         $this->alur->catat($izin, $request->user(), 'buat', null);
 
@@ -62,7 +68,7 @@ class IzinKerjaController extends Controller
     public function show(Request $request, IzinKerja $izin)
     {
         $this->pastikanTerlihat($request, $izin);
-        $izin->load('pemohon', 'riwayat.user');
+        $izin->load('pemohon', 'riwayat.user', 'dokumen');
         $aksi = $this->alur->aksiTersedia($izin, $request->user());
 
         return view('izin.show', compact('izin', 'aksi'));
@@ -71,6 +77,7 @@ class IzinKerjaController extends Controller
     public function edit(Request $request, IzinKerja $izin)
     {
         $this->pastikanBisaDiubah($request, $izin);
+        $izin->load('dokumen', 'pemohon');
 
         return view('izin.form', compact('izin'));
     }
@@ -79,6 +86,7 @@ class IzinKerjaController extends Controller
     {
         $this->pastikanBisaDiubah($request, $izin);
         $izin->update($this->validasi($request, $izin->jenis));
+        $this->simpanDokumen($request, $izin);
 
         return $this->setelahSimpan($request, $izin);
     }
@@ -86,9 +94,17 @@ class IzinKerjaController extends Controller
     public function cetak(Request $request, IzinKerja $izin)
     {
         $this->pastikanTerlihat($request, $izin);
-        $izin->load('pemohon', 'riwayat.user');
+        $izin->load('pemohon', 'riwayat.user', 'dokumen');
 
         return view('izin.cetak', compact('izin'));
+    }
+
+    public function unduh(Request $request, IzinKerja $izin, string $jenis)
+    {
+        $this->pastikanTerlihat($request, $izin);
+        $dokumen = $izin->dokumen()->where('jenis', $jenis)->firstOrFail();
+
+        return Storage::disk('local')->download($dokumen->path, $dokumen->nama_asli);
     }
 
     public function aksi(Request $request, IzinKerja $izin)
@@ -136,7 +152,13 @@ class IzinKerjaController extends Controller
 
         $data = $request->validate([
             'jenis' => ['sometimes', Rule::in(array_keys(config('izin.jenis')))],
-            'lokasi' => ['required', 'string', 'max:255'],
+            'nik' => ['required', 'string', 'max:50'],
+            'nomor_wa' => ['required', 'string', 'max:20', 'regex:/^[0-9+\-\s]{8,20}$/'],
+            'departemen' => ['required', Rule::in(config('izin.departemen'))],
+            'lokasi' => ['required', Rule::in(config('izin.lokasi'))],
+            'lokasi_detail' => ['nullable', 'string', 'max:255'],
+            'dokumen' => ['nullable', 'array'],
+            'dokumen.*' => ['nullable', 'file', 'mimes:'.implode(',', config('izin.dokumen_ekstensi')), 'max:'.config('izin.dokumen_maks_kb')],
             'uraian_pekerjaan' => ['required', 'string', 'max:5000'],
             'peralatan' => ['nullable', 'string', 'max:2000'],
             'pekerja' => ['required', 'string', 'max:2000'],
@@ -158,7 +180,14 @@ class IzinKerjaController extends Controller
             'mulai_at' => 'waktu mulai',
             'selesai_at' => 'waktu selesai',
             'uraian_pekerjaan' => 'uraian pekerjaan',
+            'nik' => 'NIK',
+            'nomor_wa' => 'nomor WA',
+            'dokumen.sop' => config('izin.dokumen.sop'),
+            'dokumen.fit_to_work' => config('izin.dokumen.fit_to_work'),
+            'dokumen.jsea' => config('izin.dokumen.jsea'),
         ]);
+
+        unset($data['dokumen']);
 
         $data['jenis'] = $jenis;
         $data['bahaya'] = array_values($data['bahaya'] ?? []);
@@ -176,6 +205,31 @@ class IzinKerjaController extends Controller
         }
 
         return $data;
+    }
+
+    /** Berkas baru menggantikan berkas lama dengan jenis yang sama. */
+    private function simpanDokumen(Request $request, IzinKerja $izin): void
+    {
+        foreach (array_keys(config('izin.dokumen')) as $jenis) {
+            $berkas = $request->file('dokumen.'.$jenis);
+
+            if (! $berkas) {
+                continue;
+            }
+
+            $lama = $izin->dokumen()->where('jenis', $jenis)->first();
+            $path = $berkas->store('dokumen-izin/'.$izin->id, 'local');
+
+            $izin->dokumen()->updateOrCreate(['jenis' => $jenis], [
+                'nama_asli' => $berkas->getClientOriginalName(),
+                'path' => $path,
+                'ukuran' => $berkas->getSize(),
+            ]);
+
+            if ($lama) {
+                Storage::disk('local')->delete($lama->path);
+            }
+        }
     }
 
     private function pastikanTerlihat(Request $request, IzinKerja $izin): void

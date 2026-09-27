@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\IzinKerja;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AlurIzinTest extends TestCase
@@ -19,6 +21,7 @@ class AlurIzinTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::fake('local');
 
         $this->pemohon = User::factory()->peran('pemohon')->create();
         $this->pengawas = User::factory()->peran('pengawas')->create();
@@ -32,7 +35,12 @@ class AlurIzinTest extends TestCase
 
         return array_merge([
             'jenis' => $jenis,
-            'lokasi' => 'Conveyor CV-02',
+            'nik' => '10001',
+            'nomor_wa' => '081200001111',
+            'departemen' => 'Plant / Maintenance',
+            'lokasi' => 'Pit 3',
+            'lokasi_detail' => 'Conveyor CV-02',
+            'dokumen' => $this->dokumenLengkap(),
             'uraian_pekerjaan' => 'Ganti idler conveyor',
             'pekerja' => "Joko\nRudi",
             'mulai_at' => now()->addHour()->format('Y-m-d\TH:i'),
@@ -41,6 +49,13 @@ class AlurIzinTest extends TestCase
             'pengendalian' => $aturan['pengendalian'],
             'apd' => ['Helm keselamatan', 'Full body harness'],
         ], $ubah);
+    }
+
+    private function dokumenLengkap(): array
+    {
+        return collect(config('izin.dokumen'))
+            ->map(fn ($_, $kunci) => UploadedFile::fake()->create($kunci.'.pdf', 200, 'application/pdf'))
+            ->all();
     }
 
     private function ajukan(array $data): IzinKerja
@@ -191,13 +206,62 @@ class AlurIzinTest extends TestCase
         $this->actingAs($this->hse)->get(route('izin.show', $izin))->assertOk()->assertSee($izin->nomor);
     }
 
+    public function test_dokumen_wajib_lengkap_sebelum_diajukan(): void
+    {
+        $data = $this->dataIzin();
+        unset($data['dokumen']['jsea']);
+
+        $izin = $this->ajukan($data);
+        $this->assertSame('draf', $izin->status);
+        $this->assertCount(2, $izin->dokumen);
+
+        // Mengunggah dokumen yang kurang saja sudah cukup; dokumen lama tetap tersimpan.
+        $lengkapi = [...$this->dataIzin(), 'dokumen' => ['jsea' => UploadedFile::fake()->create('jsea.docx', 300)], 'ajukan' => 1];
+        $this->actingAs($this->pemohon)->put(route('izin.update', $izin), $lengkapi);
+
+        $this->assertSame('menunggu_pengawas', $izin->fresh()->status);
+        $this->assertCount(3, $izin->fresh()->dokumen);
+    }
+
+    public function test_dokumen_selain_pdf_atau_word_ditolak(): void
+    {
+        $data = $this->dataIzin();
+        $data['dokumen']['sop'] = UploadedFile::fake()->create('sop.exe', 10);
+
+        $this->actingAs($this->pemohon)->post(route('izin.store'), $data)->assertSessionHasErrors('dokumen.sop');
+        $this->assertSame(0, IzinKerja::count());
+    }
+
+    public function test_dokumen_hanya_bisa_diunduh_yang_berhak(): void
+    {
+        $izin = $this->ajukan($this->dataIzin());
+        $orangLain = User::factory()->peran('pemohon')->create();
+
+        $this->actingAs($this->hse)->get(route('izin.dokumen', [$izin, 'jsea']))->assertOk()->assertDownload('jsea.pdf');
+        $this->actingAs($orangLain)->get(route('izin.dokumen', [$izin, 'jsea']))->assertNotFound();
+    }
+
+    public function test_monitoring_merekap_dan_mengekspor(): void
+    {
+        $izin = $this->ajukan($this->dataIzin());
+        $this->aksi($this->pengawas, $izin, 'setujui');
+
+        $this->actingAs($this->hse)->get(route('monitoring'))
+            ->assertOk()->assertSee('Bekerja di Ketinggian')->assertSee('Pit 3')->assertSee('Plant / Maintenance');
+
+        $csv = $this->actingAs($this->hse)->get(route('monitoring.ekspor'))->assertOk()->streamedContent();
+        $this->assertStringContainsString($izin->nomor, $csv);
+        $this->assertStringContainsString('081200001111', $csv);
+    }
+
     public function test_halaman_utama_bisa_dibuka(): void
     {
         $izin = $this->ajukan($this->dataIzin());
 
         $this->actingAs($this->pengawas)->get(route('dasbor'))->assertOk()->assertSee('Perlu tindakan Anda')->assertSee($izin->nomor);
-        $this->actingAs($this->pemohon)->get(route('izin.create'))->assertOk()->assertSee('Kerja Panas');
-        $this->actingAs($this->pemohon)->get(route('izin.create', ['jenis' => 'kerja_panas']))->assertOk()->assertSee('Uji gas');
+        $this->get(route('beranda'))->assertOk()->assertSee('Penebangan Pohon')->assertSee('Working Near Water');
+        $this->actingAs($this->pemohon)->get(route('izin.create'))->assertOk()->assertSee('Pengelasan di Luar Workshop');
+        $this->actingAs($this->pemohon)->get(route('izin.create', ['jenis' => 'kerja_panas']))->assertOk()->assertSee('Uji gas')->assertSee('JSEA');
         $this->actingAs($this->pemohon)->get(route('izin.index'))->assertOk();
         $this->actingAs($this->pemohon)->get(route('izin.cetak', $izin))->assertOk()->assertSee($izin->nomor);
     }

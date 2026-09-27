@@ -18,6 +18,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('peran')->default('pemohon');
+            $table->string('nik')->nullable()->unique();
+            $table->string('nomor_wa')->nullable();
             $table->string('jabatan')->nullable();
             $table->string('departemen')->nullable();
             $table->boolean('aktif')->default(true);

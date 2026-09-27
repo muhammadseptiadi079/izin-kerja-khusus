@@ -22,6 +22,7 @@
 <div class="kepala">
     <div>
         <h1>IZIN KERJA KHUSUS — {{ strtoupper($izin->labelJenis()) }}</h1>
+        <div><em>{{ $izin->aturan()['label_en'] ?? '' }}</em></div>
         <div>Nomor: <strong>{{ $izin->nomor }}</strong></div>
     </div>
     <div class="status">{{ strtoupper($izin->labelStatus()) }}</div>
@@ -29,7 +30,9 @@
 
 <table>
     <tr><th>Pemohon</th><td>{{ $izin->pemohon->name }} {{ $izin->pemohon->jabatan ? '('.$izin->pemohon->jabatan.')' : '' }}</td></tr>
-    <tr><th>Lokasi</th><td>{{ $izin->lokasi }}</td></tr>
+    <tr><th>NIK / Nomor WA</th><td>{{ $izin->nik }} / {{ $izin->nomor_wa }}</td></tr>
+    <tr><th>Departemen</th><td>{{ $izin->departemen }}</td></tr>
+    <tr><th>Lokasi</th><td>{{ $izin->lokasiLengkap() }}</td></tr>
     <tr><th>Uraian pekerjaan</th><td>{!! nl2br(e($izin->uraian_pekerjaan)) !!}</td></tr>
     <tr><th>Peralatan</th><td>{{ $izin->peralatan ?: '—' }}</td></tr>
     <tr><th>Berlaku</th><td>{{ $izin->mulai_at->translatedFormat('d M Y H:i') }} s.d. {{ $izin->selesai_at->translatedFormat('d M Y H:i') }}</td></tr>
@@ -40,6 +43,11 @@
             [{{ in_array($item, $izin->pengendalian ?? []) ? 'X' : ' ' }}] {{ $item }}<br>
         @endforeach
         {{ $izin->pengendalian_tambahan }}
+    </td></tr>
+    <tr><th>Dokumen pendukung</th><td>
+        @foreach (config('izin.dokumen') as $kunci => $label)
+            [{{ $izin->dokumenJenis($kunci) ? 'X' : ' ' }}] {{ $label }}<br>
+        @endforeach
     </td></tr>
     <tr><th>APD</th><td>{{ implode(', ', $izin->apd ?? []) }}</td></tr>
     @if ($izin->butuhUjiGas())
