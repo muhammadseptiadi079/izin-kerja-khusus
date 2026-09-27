@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $izin->nomor }} · {{ config('app.name') }}</title>
+    @include('layouts._ikon')
     <style>
         body { font: 12px/1.4 Arial, sans-serif; color: #000; margin: 24px; }
         h1 { font-size: 18px; margin: 0; }
@@ -20,7 +21,8 @@
 <div class="tidak-dicetak"><button onclick="window.print()">Cetak</button></div>
 
 <div class="kepala">
-    <div>
+    <img src="{{ asset('img/logo.png') }}" alt="Logo" width="64" height="64" style="margin-right:12px">
+    <div style="flex:1">
         <h1>IZIN KERJA KHUSUS — {{ strtoupper($izin->labelJenis()) }}</h1>
         <div><em>{{ $izin->aturan()['label_en'] ?? '' }}</em></div>
         <div>Nomor: <strong>{{ $izin->nomor }}</strong></div>

@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('judul', 'Dasbor') · {{ config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @include('layouts._ikon')
 </head>
 <body>
 <header class="topbar">
-    <a class="merek" href="{{ route('beranda') }}"><span>IKK</span> Izin Kerja Khusus</a>
+    <a class="merek" href="{{ route('beranda') }}"><img src="{{ asset('img/logo.png') }}" alt="" width="36" height="36"> Izin Kerja Khusus</a>
     <nav>
         <a href="{{ route('beranda') }}" @class(['aktif' => request()->routeIs('beranda')])>Home</a>
         <a href="{{ route('izin.create') }}" @class(['aktif' => request()->routeIs('izin.create', 'daftar')])>Registrasi</a>

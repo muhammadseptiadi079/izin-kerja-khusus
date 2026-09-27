@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Masuk · {{ config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @include('layouts._ikon')
 </head>
 <body>
 <div class="halaman-masuk">
     <div class="panel">
+        <img class="logo-masuk" src="{{ asset('img/logo.png') }}" alt="Logo" width="96" height="96">
         <h1>Izin Kerja Khusus</h1>
         <p class="muted">Masuk untuk mengajukan atau menyetujui izin kerja berisiko tinggi.</p>
         @if ($errors->any())

@@ -3,6 +3,8 @@
 
 @section('isi')
 <section class="hero">
+    <img class="hero-logo" src="{{ asset('img/logo-512.png') }}" alt="Logo" width="180" height="180">
+    <div>
     <p class="hero-kecil">Sistem Manajemen Keselamatan Pertambangan</p>
     <h1>Pengajuan & Registrasi Izin Kerja Khusus</h1>
     <p>Ajukan izin kerja berisiko tinggi secara online, lampirkan dokumen pendukung, dan pantau persetujuannya sampai pekerjaan selesai.</p>
@@ -10,6 +12,7 @@
         <a class="tombol" href="{{ route('izin.create') }}">Registrasi izin</a>
         <a class="tombol sekunder" href="{{ route('monitoring') }}">Monitoring & Evaluasi</a>
         @guest<a class="tombol sekunder" href="{{ route('daftar') }}">Buat akun pekerja</a>@endguest
+    </div>
     </div>
 </section>
 
