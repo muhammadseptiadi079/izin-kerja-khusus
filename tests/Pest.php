@@ -19,6 +19,9 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
+// Tes unit butuh konfigurasi Laravel (config/izin.php) tetapi tidak butuh database.
+pest()->extend(TestCase::class)->in('Unit');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations
