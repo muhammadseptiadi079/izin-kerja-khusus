@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Animasi pengelasan di luar workshop dengan percikan api dan fire watch">
+  <style>
+    .busur { animation: busur .18s steps(2) infinite; }
+    @keyframes busur { 50% { opacity: .45; } }
+    .cahaya { animation: cahaya .3s ease-in-out infinite alternate; transform-origin: 360px 250px; }
+    @keyframes cahaya { from { opacity: .35; transform: scale(.9); } to { opacity: .7; transform: scale(1.1); } }
+    .percik circle { animation: percik 1.1s ease-out infinite; }
+    @keyframes percik { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(var(--x), var(--y)); opacity: 0; } }
+    .tangan { transform-origin: 300px 214px; animation: las 2.4s ease-in-out infinite; }
+    @keyframes las { 0%, 100% { transform: translateX(-6px); } 50% { transform: translateX(10px); } }
+    .asap { animation: asap 4s ease-out infinite; }
+    @keyframes asap { 0% { transform: translateY(0) scale(.6); opacity: .5; } 100% { transform: translateY(-120px) scale(1.6); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+  </style>
+  <rect width="640" height="360" fill="#1f2937"/>
+  <rect y="270" width="640" height="90" fill="#374151"/>
+  <!-- pelat yang dilas -->
+  <rect x="300" y="256" width="200" height="24" rx="3" fill="#6b7280"/>
+  <rect x="300" y="256" width="200" height="6" fill="#9ca3af"/>
+  <!-- cahaya las -->
+  <circle class="cahaya" cx="360" cy="250" r="90" fill="#93c5fd"/>
+  <circle class="busur" cx="360" cy="252" r="10" fill="#fff"/>
+  <!-- percikan api -->
+  <g class="percik" fill="#fbbf24">
+    <circle cx="360" cy="252" r="3" style="--x:-70px;--y:-60px"/>
+    <circle cx="360" cy="252" r="2.5" style="--x:80px;--y:-50px;animation-delay:.2s"/>
+    <circle cx="360" cy="252" r="2" style="--x:40px;--y:-90px;animation-delay:.45s"/>
+    <circle cx="360" cy="252" r="3" style="--x:-40px;--y:40px;animation-delay:.3s"/>
+    <circle cx="360" cy="252" r="2" style="--x:100px;--y:20px;animation-delay:.6s"/>
+    <circle cx="360" cy="252" r="2.5" style="--x:-100px;--y:-10px;animation-delay:.75s"/>
+    <circle cx="360" cy="252" r="2" style="--x:10px;--y:-110px;animation-delay:.9s"/>
+    <circle cx="360" cy="252" r="2" style="--x:60px;--y:50px;animation-delay:.1s"/>
+  </g>
+  <!-- asap / fume -->
+  <circle class="asap" cx="360" cy="230" r="16" fill="#9ca3af"/>
+  <circle class="asap" cx="370" cy="230" r="12" fill="#9ca3af" style="animation-delay:1.5s"/>
+  <!-- tukang las -->
+  <g>
+    <rect x="200" y="196" width="60" height="74" rx="12" fill="#1d4ed8"/>
+    <rect x="206" y="266" width="20" height="56" rx="5" fill="#1e3a8a"/><rect x="234" y="266" width="20" height="56" rx="5" fill="#1e3a8a"/>
+    <rect x="202" y="318" width="28" height="10" rx="3" fill="#111827"/><rect x="232" y="318" width="28" height="10" rx="3" fill="#111827"/>
+    <circle cx="232" cy="176" r="22" fill="#f1c27d"/>
+    <!-- topeng las -->
+    <path d="M226 150 h40 v48 h-40 a22 24 0 0 1 0 -48 z" fill="#374151"/>
+    <rect x="248" y="166" width="16" height="12" rx="2" fill="#0ea5e9" opacity=".8"/>
+    <g class="tangan">
+      <rect x="250" y="206" width="54" height="14" rx="7" fill="#1d4ed8"/>
+      <rect x="296" y="202" width="20" height="22" rx="6" fill="#d97706"/>
+      <path d="M312 214 L356 248" stroke="#111827" stroke-width="7" stroke-linecap="round"/>
+    </g>
+  </g>
+  <!-- APAR -->
+  <rect x="560" y="226" width="26" height="60" rx="10" fill="#dc2626"/>
+  <rect x="566" y="214" width="14" height="14" fill="#111827"/>
+  <path d="M580 220 q18 4 16 24" stroke="#111827" stroke-width="4" fill="none"/>
+  <!-- selimut api -->
+  <rect x="420" y="296" width="120" height="16" rx="3" fill="#f59e0b"/>
+  <text x="480" y="308" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#7c2d12">SELIMUT API</text>
+  <!-- fire watch -->
+  <g>
+    <circle cx="80" cy="196" r="12" fill="#c68642"/>
+    <path d="M66 192 a14 12 0 0 1 28 0 z" fill="#fff"/>
+    <rect x="66" y="210" width="28" height="44" rx="6" fill="#f97316"/>
+    <rect x="66" y="222" width="28" height="4" fill="#fde047"/>
+    <rect x="68" y="254" width="10" height="36" fill="#1e3a8a"/><rect x="82" y="254" width="10" height="36" fill="#1e3a8a"/>
+    <text x="80" y="244" text-anchor="middle" font-family="sans-serif" font-size="7" font-weight="700" fill="#111827">FIRE</text>
+  </g>
+</svg>

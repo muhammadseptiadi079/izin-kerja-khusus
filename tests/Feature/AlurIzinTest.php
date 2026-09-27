@@ -269,3 +269,10 @@ test('pencarian daftar izin tidak peka huruf besar kecil', function () {
     $this->actingAs($this->hse)->get(route('izin.index', ['cari' => 'conveyor cv']))
         ->assertInertia(fn (Assert $page) => $page->has('izin.data', 1)->where('izin.data.0.nomor', $izin->nomor));
 });
+
+test('setiap jenis izin memakai animasi SVG', function () {
+    $this->get(route('beranda'))->assertInertia(fn (Assert $page) => $page->where(
+        'jenis',
+        fn ($jenis) => collect($jenis)->every(fn ($j) => str_contains($j['gambar'], 'img/jenis/'.$j['kunci'].'.svg'))
+    ));
+});

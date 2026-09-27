@@ -90,9 +90,11 @@ Untuk mengaktifkan **Saran AI**, isi `GEMINI_API_KEY` di `.env` (kunci dari http
 
 Semua jenis izin, penjelasan, bahaya, pengendalian, **daftar lokasi**, **daftar departemen**, dokumen wajib, batas uji gas, daftar APD, dan urutan persetujuan ada di [`config/izin.php`](config/izin.php). Ubah di sana tanpa perlu menyentuh kode lain.
 
-### Mengganti foto jenis izin
+### Gambar jenis izin
 
-Foto ada di `public/img/jenis/`, dinamai sesuai kunci jenisnya (`ketinggian`, `ruang_terbatas`, `pengangkatan`, `kerja_panas`, `penebangan_pohon`, `dekat_air`). Taruh berkas `.jpg`, `.png`, atau `.webp` dengan nama itu; foto otomatis dipakai menggantikan ilustrasi `.svg` bawaan. Ukuran yang disarankan 1280×720 (16:9).
+Setiap jenis izin memakai **animasi SVG** di `public/img/jenis/` (`ketinggian.svg`, `ruang_terbatas.svg`, `pengangkatan.svg`, `kerja_panas.svg`, `penebangan_pohon.svg`, `dekat_air.svg`). Animasi otomatis berhenti bila pengguna memilih "kurangi gerakan" di perangkatnya.
+
+Untuk memakai foto sendiri, taruh berkas `.jpg`, `.png`, atau `.webp` dengan nama yang sama (misalnya `kerja_panas.jpg`); foto otomatis didahulukan dari animasi. Ukuran yang disarankan 1280×720 (16:9).
 
 ## Struktur singkat
 
