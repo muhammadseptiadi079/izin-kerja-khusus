@@ -13,8 +13,8 @@
 @section('isi')
 <div class="kepala">
     <div>
-        <h1>{{ $aturan['label'] }}</h1>
-        <p class="muted">{{ $aturan['deskripsi'] }} Durasi maksimal {{ $aturan['durasi_maks_jam'] }} jam.</p>
+        <h1>{{ $aturan['label'] }} / <em style="color:var(--biru)">{{ $aturan['label_en'] }}</em></h1>
+        <p class="muted">{{ $aturan['deskripsi'] }} Durasi maksimal {{ $aturan['durasi_maks_jam'] }} jam. <a href="{{ route('jenis.show', $izin->jenis) }}" target="_blank">Baca persyaratan</a></p>
     </div>
     @if ($izin->exists)
         <a class="tombol sekunder" href="{{ route('izin.show', $izin) }}">Kembali ke izin</a>

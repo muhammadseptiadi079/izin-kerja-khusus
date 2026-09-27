@@ -17,6 +17,7 @@ return [
             'label_en' => 'Working at Height',
             'kode' => 'KT',
             'deskripsi' => 'Pekerjaan pada ketinggian 1,8 m atau lebih dari lantai kerja.',
+            'penjelasan' => 'Bekerja di ketinggian adalah pekerjaan apa pun yang dilakukan pada permukaan dengan perbedaan ketinggian, di mana pekerja dapat jatuh dan cedera serius atau meninggal dunia. Risiko ini meliputi jatuh dari permukaan kerja, tertimpa benda yang jatuh dari atas, atau terjepit di ruang terbatas. Untuk bekerja dengan aman, diperlukan penerapan standar keselamatan dan kesehatan kerja (K3) yang ketat, termasuk pelatihan khusus, penggunaan alat pelindung diri (APD) seperti harness dan helm, serta perawatan dan pemeriksaan rutin peralatan.',
             'durasi_maks_jam' => 12,
             'uji_gas' => false,
             'bahaya' => [
@@ -38,6 +39,7 @@ return [
             'label_en' => 'Confined Spaces',
             'kode' => 'RT',
             'deskripsi' => 'Masuk ke tangki, bejana, saluran, sumur, atau ruang dengan akses keluar-masuk terbatas.',
+            'penjelasan' => 'Bekerja di ruang terbatas atau confined space adalah pekerjaan yang akses masuknya terbatas dan dapat memiliki gas beracun serta kadar oksigen yang rendah, sehingga sangat berisiko karena potensi kekurangan oksigen, keberadaan gas beracun dan mudah terbakar, suhu ekstrem, serta kesulitan komunikasi dan evakuasi. Untuk memastikan keselamatan, perusahaan harus melakukan identifikasi dan evaluasi bahaya, menyediakan program keselamatan dengan pelatihan kerja dan prosedur penyelamatan darurat, serta memasang rambu peringatan di pintu masuk. Pekerja harus menggunakan APD yang sesuai, mendapatkan pelatihan lengkap, dan bekerja di bawah pengawasan ketat dengan tim pendukung di luar ruang terbatas.',
             'durasi_maks_jam' => 8,
             'uji_gas' => true,
             'bahaya' => [
@@ -61,6 +63,7 @@ return [
             'label_en' => 'Lifting Above 1 Ton',
             'kode' => 'PA',
             'deskripsi' => 'Pengangkatan beban lebih dari 1 ton dengan crane, hoist, atau alat angkat lainnya.',
+            'penjelasan' => 'Bekerja dengan pengangkatan di atas 1 ton memerlukan peralatan khusus seperti hoist crane atau overhead crane, bukan pengangkatan manual oleh manusia, karena manusia tidak mampu mengangkat beban sebesar itu secara aman dan efisien. Peralatan ini menyediakan sistem mekanis yang kuat dan aman untuk memindahkan beban berat, meningkatkan efisiensi, serta memiliki sistem rem otomatis untuk mencegah beban jatuh.',
             'durasi_maks_jam' => 12,
             'uji_gas' => false,
             'bahaya' => [
@@ -82,6 +85,7 @@ return [
             'label_en' => 'Welding Outside the Workshop (Hot Work)',
             'kode' => 'KP',
             'deskripsi' => 'Pengelasan, pemotongan, gerinda, atau kerja panas lain yang dilakukan di luar workshop.',
+            'penjelasan' => 'Izin kerja panas (hot work permit) adalah sistem izin formal yang diperlukan sebelum memulai pekerjaan yang menghasilkan sumber panas, percikan api, atau nyala api, seperti pengelasan atau pemotongan logam, untuk mencegah kebakaran dan potensi ledakan di tempat kerja. Izin ini berfungsi sebagai daftar periksa keselamatan yang memastikan semua tindakan pencegahan telah diambil, termasuk mengidentifikasi dan mengendalikan bahaya, menyiapkan alat pemadam kebakaran, dan menunjuk petugas pengawas kebakaran.',
             'durasi_maks_jam' => 12,
             'uji_gas' => true,
             'bahaya' => [
@@ -104,6 +108,7 @@ return [
             'label_en' => 'Land Clearing',
             'kode' => 'LC',
             'deskripsi' => 'Penebangan pohon dan pembersihan lahan secara manual atau dengan alat berat.',
+            'penjelasan' => 'Penebangan pohon atau land clearing adalah pekerjaan membersihkan lahan dari pohon dan vegetasi sebelum kegiatan penambangan, pembuatan jalan, atau pembangunan fasilitas. Bahaya utamanya adalah tertimpa pohon atau dahan yang tumbang, luka akibat chainsaw, alat berat terguling di lereng, serta gigitan binatang berbisa. Pekerjaan ini harus direncanakan dengan menentukan arah rebah pohon, mengosongkan zona bahaya, memastikan operator chainsaw dan alat berat kompeten, serta menyiapkan P3K di lokasi.',
             'durasi_maks_jam' => 12,
             'uji_gas' => false,
             'bahaya' => [
@@ -126,6 +131,7 @@ return [
             'label_en' => 'Working Near Water',
             'kode' => 'DA',
             'deskripsi' => 'Pekerjaan di tepi atau di atas sump, kolam pengendapan, sungai, atau area berlumpur.',
+            'penjelasan' => 'Bekerja dekat air atau lumpur adalah pekerjaan di tepi atau di atas sump, kolam pengendapan, sungai, rawa, atau area berlumpur, di mana pekerja dan unit berisiko tenggelam, terjebak lumpur, atau tergelincir akibat tanah tepi yang longsor. Untuk bekerja dengan aman, semua pekerja wajib memakai pelampung (life jacket), alat penyelamat seperti ring buoy dan tali harus tersedia, tepi air diberi tanggul dan rambu, kestabilan tanah diperiksa sebelum unit mendekat, dan pekerjaan tidak boleh dilakukan sendirian.',
             'durasi_maks_jam' => 12,
             'uji_gas' => false,
             'bahaya' => [

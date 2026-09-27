@@ -4,11 +4,13 @@ use App\Http\Controllers\Auth\DaftarController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DasborController;
 use App\Http\Controllers\IzinKerjaController;
+use App\Http\Controllers\JenisIzinController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PenggunaController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'beranda')->name('beranda');
+Route::get('/jenis/{jenis}', [JenisIzinController::class, 'show'])->name('jenis.show');
 
 Route::middleware('guest')->group(function () {
     Route::get('/masuk', [LoginController::class, 'create'])->name('login');

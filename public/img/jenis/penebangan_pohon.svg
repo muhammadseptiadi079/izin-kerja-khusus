@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Ilustrasi penebangan pohon">
+  <defs>
+    <linearGradient id="langit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ecae6"/><stop offset="1" stop-color="#e0f2fe"/></linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#langit)"/>
+  <path d="M0 250 Q160 215 320 240 T640 230 V360 H0Z" fill="#7a9e4f"/>
+  <path d="M0 290 Q200 265 400 285 T640 280 V360 H0Z" fill="#b08654"/>
+  <!-- hutan di latar -->
+  <g fill="#3f6b2a">
+    <path d="M40 250 l25 -70 l25 70z"/><path d="M85 245 l30 -90 l30 90z"/><path d="M520 240 l28 -80 l28 80z"/><path d="M570 238 l24 -64 l24 64z"/>
+  </g>
+  <!-- pohon rebah -->
+  <g transform="rotate(-18 420 285)">
+    <rect x="300" y="275" width="220" height="22" rx="6" fill="#7c4a22"/>
+    <circle cx="540" cy="270" r="48" fill="#4d7c2f"/><circle cx="585" cy="255" r="36" fill="#5f9138"/><circle cx="560" cy="300" r="34" fill="#3f6b2a"/>
+  </g>
+  <!-- tunggul -->
+  <rect x="270" y="262" width="34" height="30" fill="#8a5a2b"/><ellipse cx="287" cy="262" rx="17" ry="6" fill="#d9a066"/>
+  <!-- bulldozer -->
+  <g transform="translate(60 238)">
+    <rect x="30" y="8" width="90" height="40" rx="4" fill="#f59e0b"/>
+    <rect x="70" y="-22" width="44" height="32" rx="3" fill="#f59e0b"/><rect x="76" y="-16" width="32" height="20" fill="#bae6fd"/>
+    <rect x="22" y="46" width="108" height="22" rx="11" fill="#374151"/>
+    <g fill="#6b7280"><circle cx="36" cy="57" r="7"/><circle cx="60" cy="57" r="7"/><circle cx="84" cy="57" r="7"/><circle cx="108" cy="57" r="7"/></g>
+    <path d="M0 18 h14 v44 h-14 q-6 -22 0 -44z" fill="#9ca3af"/><rect x="12" y="30" width="20" height="6" fill="#6b7280"/>
+  </g>
+  <!-- pekerja dengan chainsaw -->
+  <g transform="translate(220 196)">
+    <circle cx="20" cy="12" r="11" fill="#f1c27d"/><path d="M6 8 a14 12 0 0 1 28 0 z" fill="#facc15"/>
+    <rect x="8" y="24" width="24" height="34" rx="5" fill="#f97316"/><rect x="8" y="36" width="24" height="4" fill="#fde047"/>
+    <rect x="10" y="58" width="9" height="30" fill="#1e3a8a"/><rect x="21" y="58" width="9" height="30" fill="#1e3a8a"/>
+    <rect x="30" y="34" width="26" height="12" rx="3" fill="#dc2626"/><rect x="54" y="37" width="30" height="6" rx="3" fill="#9ca3af"/>
+  </g>
+  <rect x="0" y="0" width="640" height="360" fill="none" stroke="#00000010"/>
+</svg>

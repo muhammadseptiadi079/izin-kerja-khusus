@@ -259,7 +259,10 @@ class AlurIzinTest extends TestCase
         $izin = $this->ajukan($this->dataIzin());
 
         $this->actingAs($this->pengawas)->get(route('dasbor'))->assertOk()->assertSee('Perlu tindakan Anda')->assertSee($izin->nomor);
-        $this->get(route('beranda'))->assertOk()->assertSee('Penebangan Pohon')->assertSee('Working Near Water');
+        $this->get(route('beranda'))->assertOk()->assertSee('Penebangan Pohon')->assertSee('Working Near Water')
+            ->assertSee('Klik di sini untuk Registrasi')->assertSee('img/jenis/kerja_panas.jpg', false)->assertSee('img/jenis/dekat_air.svg', false);
+        $this->get(route('jenis.show', 'ruang_terbatas'))->assertOk()->assertSee('confined space')->assertSee('Uji gas dilakukan sebelum masuk');
+        $this->get('/jenis/tidak-ada')->assertNotFound();
         $this->actingAs($this->pemohon)->get(route('izin.create'))->assertOk()->assertSee('Pengelasan di Luar Workshop');
         $this->actingAs($this->pemohon)->get(route('izin.create', ['jenis' => 'kerja_panas']))->assertOk()->assertSee('Uji gas')->assertSee('JSEA');
         $this->actingAs($this->pemohon)->get(route('izin.index'))->assertOk();

@@ -7,6 +7,7 @@ Web app untuk mengajukan, menyetujui, dan menutup **izin kerja khusus** untuk pe
 ## Fitur
 
 - **Menu Home, Registrasi, dan Monitoring & Evaluasi**, sama seperti situs IKK sebelumnya.
+- **Halaman per jenis izin** di Home dan di `/jenis/{jenis}`: judul Indonesia/Inggris, foto, penjelasan, tombol "Klik di sini untuk Registrasi", serta bahaya, pengendalian, dan persyaratannya.
 - **6 jenis izin**: Bekerja di Ketinggian (*Working at Height*), Bekerja di Ruang Terbatas (*Confined Spaces*), Pengangkatan di Atas 1 Ton (*Lifting*), Pengelasan di Luar Workshop (*Hot Work*), Penebangan Pohon (*Land Clearing*), dan Bekerja Dekat Air atau Lumpur (*Working Near Water*). Setiap jenis punya daftar bahaya, pengendalian wajib, dan durasi maksimal sendiri.
 - **Data pemohon**: nama, NIK, nomor WA, departemen pelapor, dan lokasi (pilihan).
 - **Dokumen wajib**: SOP / IK / Standar Parameter, Fit To Work dari Dokter / Klinik, dan JSEA. Format PDF atau Word, maksimal 10 MB. Dokumen hanya bisa diunduh oleh pemohon dan penyetuju.
@@ -68,6 +69,10 @@ Untuk MySQL, ubah `DB_CONNECTION=mysql` dan isi `DB_HOST`, `DB_DATABASE`, `DB_US
 ## Menyesuaikan aturan
 
 Semua jenis izin, bahaya, pengendalian, **daftar lokasi**, **daftar departemen**, dokumen wajib, batas uji gas, daftar APD, dan urutan persetujuan ada di [`config/izin.php`](config/izin.php). Ubah di sana tanpa perlu menyentuh kode lain.
+
+### Mengganti foto jenis izin
+
+Foto ada di `public/img/jenis/`, dinamai sesuai kunci jenisnya (`ketinggian`, `ruang_terbatas`, `pengangkatan`, `kerja_panas`, `penebangan_pohon`, `dekat_air`). Taruh berkas `.jpg`, `.png`, atau `.webp` dengan nama itu; foto otomatis dipakai menggantikan ilustrasi `.svg` bawaan. Ukuran yang disarankan 1280×720 (16:9).
 
 ## Pengujian
 

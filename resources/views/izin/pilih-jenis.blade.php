@@ -12,6 +12,9 @@
 <div class="grid grid-3 pilih-jenis">
     @foreach (config('izin.jenis') as $kunci => $jenis)
         <a href="{{ route('izin.create', ['jenis' => $kunci]) }}">
+            @if ($gambar = \App\Support\GambarJenis::url($kunci))
+                <img class="gambar-kartu" src="{{ $gambar }}" alt="" loading="lazy">
+            @endif
             <span class="kode">{{ $jenis['kode'] }}</span>
             <h2 style="margin-bottom:.1rem">{{ $jenis['label'] }}</h2>
             <p class="small" style="margin:0 0 .4rem;color:var(--brand);font-style:italic">{{ $jenis['label_en'] }}</p>

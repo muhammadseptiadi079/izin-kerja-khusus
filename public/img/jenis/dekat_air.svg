@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Ilustrasi bekerja dekat air">
+  <defs>
+    <linearGradient id="langit2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bde0fe"/><stop offset="1" stop-color="#f1f5f9"/></linearGradient>
+    <linearGradient id="air" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b8a8f"/><stop offset="1" stop-color="#3b5f63"/></linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#langit2)"/>
+  <!-- tanggul tanah -->
+  <path d="M0 190 L260 190 L330 250 L330 360 L0 360Z" fill="#a0764a"/>
+  <path d="M0 190 L260 190 L275 203 L0 203Z" fill="#c29663"/>
+  <!-- sump / kolam -->
+  <path d="M330 250 L640 250 L640 360 L330 360Z" fill="url(#air)"/>
+  <g stroke="#dbeafe" stroke-width="3" fill="none" opacity=".7">
+    <path d="M360 280 q15 -8 30 0 t30 0"/><path d="M470 300 q15 -8 30 0 t30 0"/><path d="M400 330 q15 -8 30 0 t30 0"/><path d="M550 275 q15 -8 30 0 t30 0"/>
+  </g>
+  <!-- pembatas & rambu -->
+  <g fill="#ef4444"><rect x="236" y="150" width="6" height="42"/><rect x="176" y="150" width="6" height="42"/></g>
+  <rect x="170" y="156" width="80" height="6" fill="#facc15"/><rect x="170" y="170" width="80" height="6" fill="#facc15"/>
+  <rect x="110" y="120" width="4" height="72" fill="#6b7280"/>
+  <path d="M112 96 l26 44 h-52z" fill="#facc15" stroke="#111827" stroke-width="3"/><rect x="110" y="110" width="4" height="16" fill="#111827"/><rect x="110" y="130" width="4" height="4" fill="#111827"/>
+  <!-- ring buoy -->
+  <circle cx="300" cy="215" r="18" fill="none" stroke="#f97316" stroke-width="10"/>
+  <g stroke="#fff" stroke-width="10"><path d="M300 197 v6"/><path d="M300 227 v6"/><path d="M282 215 h6"/><path d="M312 215 h6"/></g>
+  <!-- pekerja memakai pelampung -->
+  <g transform="translate(40 110)">
+    <circle cx="20" cy="12" r="11" fill="#f1c27d"/><path d="M6 8 a14 12 0 0 1 28 0 z" fill="#fff"/>
+    <rect x="6" y="24" width="28" height="36" rx="6" fill="#f97316"/><rect x="6" y="34" width="28" height="4" fill="#e5e7eb"/><rect x="6" y="46" width="28" height="4" fill="#e5e7eb"/>
+    <rect x="10" y="60" width="9" height="20" fill="#1e3a8a"/><rect x="21" y="60" width="9" height="20" fill="#1e3a8a"/>
+  </g>
+  <g transform="translate(20 116)">
+    <circle cx="0" cy="8" r="10" fill="#c68642"/><path d="M-13 4 a13 11 0 0 1 26 0 z" fill="#facc15"/>
+    <rect x="-12" y="18" width="24" height="34" rx="6" fill="#f97316"/><rect x="-12" y="28" width="24" height="4" fill="#e5e7eb"/>
+    <rect x="-9" y="52" width="8" height="22" fill="#1e3a8a"/><rect x="1" y="52" width="8" height="22" fill="#1e3a8a"/>
+  </g>
+  <!-- pompa -->
+  <rect x="340" y="226" width="60" height="30" rx="4" fill="#2563eb"/><rect x="398" y="236" width="80" height="8" fill="#374151"/>
+</svg>

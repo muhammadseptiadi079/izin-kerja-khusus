@@ -154,3 +154,33 @@ table.rekap .angka-sel { width: 3rem; text-align: right; font-weight: 700; font-
 input[type=file] { font: inherit; max-width: 100%; }
 input[type=date] { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff; color: var(--ink); }
 input[readonly] { background: var(--neutral-bg); }
+
+:root { --teal: #1f5f7a; --biru: #3b6fd8; }
+.judul-jenis { font-size: 1.6rem; line-height: 1.2; color: var(--teal); margin: 0 0 .4rem; letter-spacing: .01em; }
+.judul-jenis em { color: var(--biru); }
+.sub-jenis { font-weight: 600; color: var(--muted); margin: 0 0 1rem; }
+.tombol-registrasi { background: var(--teal); border-color: var(--teal); }
+
+.loncat-jenis { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
+.loncat-jenis a { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: .3rem .8rem; text-decoration: none; color: var(--ink); font-size: .9rem; }
+.loncat-jenis a:hover { border-color: var(--teal); color: var(--teal); }
+
+.bagian-jenis { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 1.5rem; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.25rem; scroll-margin-top: 1rem; }
+.bagian-jenis:nth-of-type(even) .bagian-gambar { order: 2; }
+.bagian-gambar img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; display: block; background: var(--neutral-bg); }
+.bagian-teks p { text-align: justify; }
+
+.bagian-tunggal { text-align: center; }
+.bagian-tunggal .gambar-besar { display: block; width: 100%; max-width: 720px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; margin: 1.25rem auto; }
+.bagian-tunggal .penjelasan { max-width: 720px; margin: 0 auto; text-align: justify; }
+
+.pilih-jenis .gambar-kartu { width: calc(100% + 2rem); margin: -1rem -1rem .75rem; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius) var(--radius) 0 0; display: block; }
+.pilih-jenis a { overflow: hidden; }
+
+@media (max-width: 760px) {
+  .bagian-jenis { grid-template-columns: 1fr; }
+  .bagian-jenis:nth-of-type(even) .bagian-gambar { order: 0; }
+  .judul-jenis { font-size: 1.3rem; text-align: center; }
+  .bagian-teks .sub-jenis { text-align: center; }
+  .tombol-registrasi { width: 100%; justify-content: center; }
+}

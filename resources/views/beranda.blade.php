@@ -18,17 +18,16 @@
     <p>Dalam <strong>SMKP (Sistem Manajemen Keselamatan Pertambangan)</strong>, <strong>Izin Kerja Khusus (IKK)</strong> adalah <strong>izin yang diberikan kepada pekerja atau pihak tertentu untuk melaksanakan pekerjaan yang memiliki potensi bahaya tinggi</strong>. Pekerjaan tersebut hanya boleh dilakukan setelah melalui proses identifikasi bahaya, pengendalian risiko, serta verifikasi kondisi aman di lapangan.</p>
 </div>
 
-<h2>Jenis izin kerja khusus</h2>
-<div class="grid grid-3 pilih-jenis" style="margin-bottom:1.25rem">
+<h2 id="jenis">Jenis izin kerja khusus</h2>
+<nav class="loncat-jenis">
     @foreach (config('izin.jenis') as $kunci => $jenis)
-        <a href="{{ route('izin.create', ['jenis' => $kunci]) }}">
-            <span class="kode">{{ $loop->iteration }}</span>
-            <h2 style="margin-bottom:.1rem">{{ $jenis['label'] }}</h2>
-            <p class="small" style="margin:0 0 .4rem;color:var(--brand);font-style:italic">{{ $jenis['label_en'] }}</p>
-            <p class="muted small">{{ $jenis['deskripsi'] }}</p>
-        </a>
+        <a href="#{{ $kunci }}">{{ $loop->iteration }}. {{ $jenis['label'] }} / <em>{{ $jenis['label_en'] }}</em></a>
     @endforeach
-</div>
+</nav>
+
+@foreach (config('izin.jenis') as $jenis => $aturan)
+    @include('jenis._bagian')
+@endforeach
 
 <div class="grid grid-2">
     <div class="panel">
