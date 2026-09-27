@@ -11,7 +11,12 @@ class IzinKerja extends Model
 {
     protected $table = 'izin_kerja';
 
-    protected $guarded = ['id', 'nomor', 'pemohon_id', 'status', 'diajukan_at', 'disahkan_at', 'ditutup_at'];
+    // Kolom alur dan evaluasi hanya diisi lewat AlurIzin, tidak dari formulir izin.
+    protected $guarded = [
+        'id', 'nomor', 'pemohon_id', 'status', 'diajukan_at', 'disahkan_at', 'ditutup_at',
+        'mulai_aktual_at', 'selesai_aktual_at', 'penutupan_diajukan_at', 'catatan_penutupan',
+        'ada_insiden', 'kategori_insiden', 'uraian_insiden', 'tindakan_insiden', 'pemeriksaan_penutupan',
+    ];
 
     public const STATUS = [
         'draf' => 'Draf',
@@ -35,6 +40,11 @@ class IzinKerja extends Model
             'diajukan_at' => 'datetime',
             'disahkan_at' => 'datetime',
             'ditutup_at' => 'datetime',
+            'mulai_aktual_at' => 'datetime',
+            'selesai_aktual_at' => 'datetime',
+            'penutupan_diajukan_at' => 'datetime',
+            'ada_insiden' => 'boolean',
+            'pemeriksaan_penutupan' => 'array',
             'bahaya' => 'array',
             'pengendalian' => 'array',
             'apd' => 'array',
@@ -147,6 +157,16 @@ class IzinKerja extends Model
             'disahkan_at' => $this->disahkan_at?->toIso8601String(),
             'ditutup_at' => $this->ditutup_at?->toIso8601String(),
             'catatan_penutupan' => $this->catatan_penutupan,
+            'mulai_aktual_at' => $this->mulai_aktual_at?->toIso8601String(),
+            'selesai_aktual_at' => $this->selesai_aktual_at?->toIso8601String(),
+            'penutupan_diajukan_at' => $this->penutupan_diajukan_at?->toIso8601String(),
+            'ada_insiden' => $this->ada_insiden,
+            'kategori_insiden' => $this->kategori_insiden,
+            'label_insiden' => $this->labelInsiden(),
+            'uraian_insiden' => $this->uraian_insiden,
+            'tindakan_insiden' => $this->tindakan_insiden,
+            'pemeriksaan_penutupan' => $this->pemeriksaan_penutupan ?? [],
+            'kesesuaian_waktu' => $this->kesesuaianWaktu(),
             'pemohon_jabatan' => $this->pemohon?->jabatan,
             'dokumen' => $this->dokumen->map(fn (DokumenIzin $d) => [
                 'jenis' => $d->jenis,
@@ -166,6 +186,78 @@ class IzinKerja extends Model
                 'waktu' => $r->created_at->toIso8601String(),
             ])->values()->all(),
         ];
+    }
+
+    public function labelInsiden(): ?string
+    {
+        if ($this->ada_insiden === null) {
+            return null;
+        }
+
+        return $this->ada_insiden
+            ? (config('izin.insiden.'.$this->kategori_insiden) ?? 'Insiden')
+            : 'Tidak ada insiden';
+    }
+
+    /**
+     * Kesesuaian jam kerja sebenarnya dengan jadwal yang diajukan.
+     *
+     * Urutan keparahan: mulai sebelum disahkan (bekerja tanpa izin) >
+     * selesai lewat waktu > mulai sebelum jadwal > sesuai. Null bila jam
+     * kerja sebenarnya belum dilaporkan.
+     *
+     * @return array{kode: string, label: string, temuan: list<string>, lewat_menit: int}|null
+     */
+    public function kesesuaianWaktu(): ?array
+    {
+        if (! $this->mulai_aktual_at || ! $this->selesai_aktual_at) {
+            return null;
+        }
+
+        $toleransi = (int) config('izin.toleransi_waktu_menit', 15);
+        $temuan = [];
+        $kode = 'sesuai';
+
+        $lewatMenit = (int) max(0, $this->selesai_at->diffInMinutes($this->selesai_aktual_at, false));
+        $awalMenit = (int) max(0, $this->mulai_aktual_at->diffInMinutes($this->mulai_at, false));
+        $sebelumSahMenit = $this->disahkan_at
+            ? (int) max(0, $this->mulai_aktual_at->diffInMinutes($this->disahkan_at, false))
+            : 0;
+
+        if ($sebelumSahMenit > $toleransi) {
+            $kode = 'sebelum_disahkan';
+            $temuan[] = 'Pekerjaan dimulai '.self::durasi($sebelumSahMenit).' sebelum izin disahkan.';
+        }
+
+        if ($lewatMenit > $toleransi) {
+            $kode = $kode === 'sesuai' ? 'lewat_waktu' : $kode;
+            $temuan[] = 'Pekerjaan selesai '.self::durasi($lewatMenit).' melewati jadwal.';
+        }
+
+        if ($awalMenit > $toleransi && $sebelumSahMenit <= $toleransi) {
+            $kode = $kode === 'sesuai' ? 'mulai_awal' : $kode;
+            $temuan[] = 'Pekerjaan dimulai '.self::durasi($awalMenit).' sebelum jadwal.';
+        }
+
+        return [
+            'kode' => $kode,
+            'label' => [
+                'sesuai' => 'Sesuai jadwal',
+                'lewat_waktu' => 'Selesai lewat waktu',
+                'mulai_awal' => 'Mulai sebelum jadwal',
+                'sebelum_disahkan' => 'Mulai sebelum disahkan',
+            ][$kode],
+            'temuan' => $temuan,
+            'lewat_menit' => $lewatMenit,
+        ];
+    }
+
+    public static function durasi(int $menit): string
+    {
+        $jam = intdiv($menit, 60);
+        $sisa = $menit % 60;
+
+        return trim(($jam ? $jam.' jam ' : '').($sisa || ! $jam ? $sisa.' menit' : ''));
     }
 
     public function bisaDiubah(): bool

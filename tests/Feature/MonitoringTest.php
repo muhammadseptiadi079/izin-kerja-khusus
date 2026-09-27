@@ -59,3 +59,72 @@ test('rekap diekspor ke Excel', function () {
             && $ekspor->map($ekspor->collection()->first())[5] === ' 081200001111'
     );
 });
+
+/** Izin selesai dengan evaluasi pasca pekerjaan. */
+function izinDievaluasi(array $evaluasi): IzinKerja
+{
+    $izin = izinContoh(['status' => 'selesai']);
+    $izin->forceFill([
+        'disahkan_at' => $izin->mulai_at->copy()->subMinutes(30),
+        'mulai_aktual_at' => $izin->mulai_at,
+        'selesai_aktual_at' => $izin->selesai_at,
+        'penutupan_diajukan_at' => $izin->selesai_at->copy()->addHour(),
+        'ada_insiden' => false,
+        ...$evaluasi,
+    ])->save();
+
+    return $izin;
+}
+
+test('monitoring merekap insiden dan kesesuaian waktu', function () {
+    izinDievaluasi([]);
+    izinDievaluasi(['ada_insiden' => true, 'kategori_insiden' => 'nyaris_celaka', 'uraian_insiden' => 'Alat jatuh', 'tindakan_insiden' => 'Diikat']);
+    $lewat = izinDievaluasi([
+        'selesai_aktual_at' => now()->addHours(4)->addMinutes(90),
+        'penutupan_diajukan_at' => now()->addHours(4)->addMinutes(150),
+    ]);
+    izinContoh(); // belum dievaluasi, tidak ikut dihitung
+
+    $this->actingAs(akun('hse'))->get(route('monitoring'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('pasca.dievaluasi', 3)
+            ->where('pasca.insiden', 1)
+            ->where('pasca.tingkat_insiden', 33.3)
+            ->where('pasca.sesuai_jadwal', 2)
+            ->where('pasca.lewat_waktu', 1)
+            ->where('pasca.rata_menit_lewat', 90)
+            ->where('pasca.rata_jam_lapor', 1)
+            ->where('perKategoriInsiden.0', ['label' => 'Nyaris celaka (near miss)', 'jumlah' => 1])
+            ->has('daftarInsiden', 1)
+            ->has('daftarWaktu', 1)
+            ->where('daftarWaktu.0.nomor', $lewat->nomor)
+            ->where('daftarWaktu.0.kesesuaian_waktu.kode', 'lewat_waktu'));
+});
+
+test('mulai sebelum izin disahkan ditandai sebagai pelanggaran paling berat', function () {
+    $izin = izinDievaluasi([]);
+    $izin->forceFill(['disahkan_at' => $izin->mulai_at->copy()->addHours(2), 'selesai_aktual_at' => $izin->selesai_at->copy()->addHours(2)])->save();
+
+    expect($izin->fresh()->kesesuaianWaktu())
+        ->kode->toBe('sebelum_disahkan')
+        ->temuan->toHaveCount(2);
+});
+
+test('ekspor Excel menyertakan evaluasi pasca pekerjaan', function () {
+    Excel::fake();
+    izinDievaluasi(['ada_insiden' => true, 'kategori_insiden' => 'p3k', 'uraian_insiden' => 'Lecet', 'tindakan_insiden' => 'P3K']);
+
+    $this->actingAs(akun('hse'))->get(route('monitoring.ekspor'))->assertOk();
+
+    Excel::assertDownloaded(
+        'rekap-ikk-'.now()->startOfMonth()->format('Ymd').'-'.now()->endOfMonth()->format('Ymd').'.xlsx',
+        function (RekapIzinExport $ekspor) {
+            $baris = $ekspor->map($ekspor->collection()->first());
+            $kolom = array_combine($ekspor->headings(), $baris);
+
+            return $kolom['Kesesuaian waktu'] === 'Sesuai jadwal'
+                && $kolom['Insiden'] === 'Cedera ringan / P3K'
+                && $kolom['Kronologi insiden'] === 'Lecet';
+        }
+    );
+});

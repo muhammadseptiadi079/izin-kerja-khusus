@@ -3,10 +3,12 @@ import Ikon from '@/Components/Ikon.vue';
 import InputError from '@/Components/InputError.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { tanggalJam, tanggalPanjang, tautanWa } from '@/lib/format';
+import FormEvaluasi from '@/Components/FormEvaluasi.vue';
+import KesesuaianBadge from '@/Components/KesesuaianBadge.vue';
+import { keInputWaktu, tanggalJam, tanggalPanjang, tautanWa } from '@/lib/format';
 import type { BatasGas, IzinLengkap, JenisIzin, Tahap } from '@/types/izin';
 import { Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     izin: IzinLengkap;
@@ -15,6 +17,8 @@ const props = defineProps<{
     dokumen: Record<string, string>;
     uji_gas: Record<string, BatasGas>;
     tahap: Tahap[];
+    insiden: Record<string, string>;
+    pemeriksaanPenutupan: string[];
 }>();
 
 const labelAksi: Record<string, { label: string; kelas: string; konfirmasi?: boolean }> = {
@@ -23,15 +27,40 @@ const labelAksi: Record<string, { label: string; kelas: string; konfirmasi?: boo
     batalkan: { label: 'Batalkan izin', kelas: 'tombol-sekunder', konfirmasi: true },
     ajukan_penutupan: { label: 'Pekerjaan selesai, ajukan penutupan', kelas: 'tombol' },
     tutup: { label: 'Konfirmasi area aman & tutup izin', kelas: 'tombol-hijau' },
-    hentikan: { label: 'Hentikan pekerjaan', kelas: 'tombol-merah', konfirmasi: true },
+    hentikan: { label: 'Hentikan pekerjaan', kelas: 'tombol-merah' },
 };
 const tombolAksi = computed(() => Object.keys(labelAksi).filter((a) => props.aksi.includes(a)));
 
-const form = useForm({ aksi: '', catatan: '' });
+const form = useForm({
+    aksi: '',
+    catatan: '',
+    ada_insiden: null as boolean | null,
+    kategori_insiden: '',
+    uraian_insiden: '',
+    tindakan_insiden: '',
+    mulai_aktual_at: keInputWaktu(props.izin.disahkan_at && props.izin.disahkan_at > props.izin.mulai_at ? props.izin.disahkan_at : props.izin.mulai_at),
+    selesai_aktual_at: keInputWaktu(new Date().toISOString()),
+    pemeriksaan_penutupan: [] as string[],
+});
+
+// Penutupan dan penghentian membuka isian evaluasi pasca pekerjaan lebih dulu.
+const modeEvaluasi = ref<'' | 'ajukan_penutupan' | 'hentikan'>('');
+
 function jalankan(aksi: string) {
+    if ((aksi === 'ajukan_penutupan' || aksi === 'hentikan') && modeEvaluasi.value !== aksi) {
+        modeEvaluasi.value = aksi;
+        form.clearErrors();
+        return;
+    }
     if (labelAksi[aksi].konfirmasi && !confirm(`Yakin ${labelAksi[aksi].label.toLowerCase()}?`)) return;
     form.aksi = aksi;
-    form.post(route('izin.aksi', props.izin.id), { preserveScroll: true, onSuccess: () => form.reset() });
+    form.post(route('izin.aksi', props.izin.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
+            modeEvaluasi.value = '';
+        },
+    });
 }
 
 // Tahapan: persetujuan → pekerjaan berjalan → penutupan
@@ -127,14 +156,89 @@ function aman(kunci: string, nilai: unknown): boolean | null {
             <h2 class="judul-bagian mb-1 flex items-center gap-2"><Ikon nama="lonceng" kelas="h-5 w-5 text-merek-600" />Tindakan Anda</h2>
             <p class="mb-3 text-sm text-slate-500">Periksa rincian di bawah sebelum memutuskan.</p>
             <label class="label" for="catatan">Catatan</label>
-            <textarea id="catatan" v-model="form.catatan" rows="3" class="masukan" placeholder="Wajib diisi untuk penolakan, penghentian, dan penutupan" />
+            <textarea
+                id="catatan"
+                v-model="form.catatan"
+                rows="3"
+                class="masukan"
+                :placeholder="modeEvaluasi === 'hentikan' ? 'Alasan pekerjaan dihentikan' : modeEvaluasi === 'ajukan_penutupan' ? 'Ringkasan pekerjaan yang sudah diselesaikan' : 'Wajib diisi untuk penolakan, penghentian, dan penutupan'"
+            />
             <InputError :message="form.errors.catatan || (form.errors as Record<string, string>).setujui" />
-            <div class="mt-3 flex flex-wrap gap-2">
+
+            <div v-if="modeEvaluasi" class="mt-5 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
+                <h3 class="judul-bagian mb-4">{{ modeEvaluasi === 'hentikan' ? 'Penghentian pekerjaan' : 'Evaluasi pasca pekerjaan' }}</h3>
+                <FormEvaluasi
+                    :form="form"
+                    :mode="modeEvaluasi"
+                    :insiden="insiden"
+                    :pemeriksaan="pemeriksaanPenutupan"
+                    :jadwal="{ mulai: tanggalJam(izin.mulai_at), selesai: tanggalJam(izin.selesai_at) }"
+                />
+                <div class="mt-5 flex flex-wrap gap-2">
+                    <button type="button" :class="modeEvaluasi === 'hentikan' ? 'tombol-merah' : 'tombol'" :disabled="form.processing" @click="jalankan(modeEvaluasi)">
+                        {{ modeEvaluasi === 'hentikan' ? 'Hentikan sekarang' : 'Kirim laporan penutupan' }}
+                    </button>
+                    <button type="button" class="tombol-sekunder" @click="modeEvaluasi = ''">Batal</button>
+                </div>
+            </div>
+
+            <div v-else class="mt-3 flex flex-wrap gap-2">
                 <button v-for="a in tombolAksi" :key="a" type="button" :class="labelAksi[a].kelas" :disabled="form.processing" @click="jalankan(a)">
                     {{ labelAksi[a].label }}
                 </button>
             </div>
         </div>
+
+        <!-- Hasil evaluasi pasca pekerjaan -->
+        <section v-if="izin.ada_insiden !== null || izin.kesesuaian_waktu" class="panel mb-5">
+            <h2 class="judul-bagian mb-4">Evaluasi pasca pekerjaan</h2>
+            <div class="grid gap-4 lg:grid-cols-2">
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-bold">Kesesuaian waktu</h3>
+                        <KesesuaianBadge v-if="izin.kesesuaian_waktu" :nilai="izin.kesesuaian_waktu" />
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-xs text-slate-500"><th class="pb-1 font-semibold"></th><th class="pb-1 font-semibold">Diajukan</th><th class="pb-1 font-semibold">Sebenarnya</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-t border-slate-100"><td class="py-1.5 text-slate-500">Mulai</td><td>{{ tanggalJam(izin.mulai_at) }}</td><td class="font-semibold">{{ tanggalJam(izin.mulai_aktual_at) }}</td></tr>
+                            <tr class="border-t border-slate-100"><td class="py-1.5 text-slate-500">Selesai</td><td>{{ tanggalJam(izin.selesai_at) }}</td><td class="font-semibold">{{ tanggalJam(izin.selesai_aktual_at) }}</td></tr>
+                            <tr v-if="izin.disahkan_at" class="border-t border-slate-100"><td class="py-1.5 text-slate-500">Disahkan</td><td colspan="2">{{ tanggalJam(izin.disahkan_at) }}</td></tr>
+                        </tbody>
+                    </table>
+                    <ul v-if="izin.kesesuaian_waktu?.temuan.length" class="mt-3 space-y-1">
+                        <li v-for="t in izin.kesesuaian_waktu.temuan" :key="t" class="flex gap-2 text-sm text-red-800"><Ikon nama="peringatan" kelas="mt-0.5 h-4 w-4 shrink-0" />{{ t }}</li>
+                    </ul>
+                    <p v-else-if="!izin.kesesuaian_waktu" class="mt-3 text-sm text-slate-500">Jam mulai sebenarnya tidak dilaporkan (pekerjaan dihentikan).</p>
+                </div>
+
+                <div :class="['rounded-xl border p-4', izin.ada_insiden ? 'border-red-200 bg-red-50/50' : 'border-slate-200']">
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="font-bold">Insiden</h3>
+                        <span
+                            v-if="izin.label_insiden"
+                            :class="['rounded-full px-2.5 py-0.5 text-xs font-semibold', izin.ada_insiden ? 'bg-red-600 text-white' : 'bg-green-50 text-green-800 ring-1 ring-green-600/20 ring-inset']"
+                            >{{ izin.label_insiden }}</span
+                        >
+                    </div>
+                    <template v-if="izin.ada_insiden">
+                        <p class="text-xs font-semibold text-slate-500">Kronologi</p>
+                        <p class="mb-2 text-sm whitespace-pre-line">{{ izin.uraian_insiden }}</p>
+                        <p class="text-xs font-semibold text-slate-500">Tindakan</p>
+                        <p class="text-sm whitespace-pre-line">{{ izin.tindakan_insiden }}</p>
+                    </template>
+                    <p v-else class="text-sm text-slate-600">Tidak ada insiden yang dilaporkan selama pekerjaan.</p>
+                    <template v-if="izin.pemeriksaan_penutupan.length">
+                        <p class="mt-3 text-xs font-semibold text-slate-500">Kondisi area dipastikan</p>
+                        <ul class="mt-1 space-y-1">
+                            <li v-for="p in izin.pemeriksaan_penutupan" :key="p" class="flex gap-2 text-sm"><Ikon nama="centang" kelas="mt-0.5 h-4 w-4 shrink-0 text-green-600" />{{ p }}</li>
+                        </ul>
+                    </template>
+                </div>
+            </div>
+        </section>
 
         <div class="grid gap-5 lg:grid-cols-2">
             <div class="panel">

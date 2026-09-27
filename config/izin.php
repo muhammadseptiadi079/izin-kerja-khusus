@@ -213,6 +213,29 @@ return [
         'Chaps / pelindung kaki chainsaw',
     ],
 
+    /*
+     * Evaluasi pasca pekerjaan, diisi pemohon saat mengajukan penutupan
+     * (dan oleh penyetuju saat menghentikan pekerjaan).
+     */
+    'insiden' => [
+        'nyaris_celaka' => 'Nyaris celaka (near miss)',
+        'p3k' => 'Cedera ringan / P3K',
+        'cedera_berat' => 'Cedera berat / hilang hari kerja',
+        'kerusakan_alat' => 'Kerusakan alat / properti',
+        'kebakaran' => 'Kebakaran / ledakan',
+        'lingkungan' => 'Pencemaran lingkungan / tumpahan',
+    ],
+
+    'pemeriksaan_penutupan' => [
+        'Semua pekerja sudah keluar dari area kerja',
+        'Area kerja bersih dan aman dari sisa material',
+        'Peralatan dan alat bantu sudah dirapikan atau dikembalikan',
+        'Isolasi, LOTO, dan barikade sudah dilepas sesuai prosedur',
+    ],
+
+    // Selisih waktu yang masih dianggap sesuai jadwal.
+    'toleransi_waktu_menit' => 15,
+
     // Urutan persetujuan. Setiap tahap diputuskan oleh pengguna dengan peran itu.
     'tahap_persetujuan' => [
         'menunggu_pengawas' => ['peran' => 'pengawas', 'label' => 'Pengawas Area', 'berikutnya' => 'menunggu_hse'],

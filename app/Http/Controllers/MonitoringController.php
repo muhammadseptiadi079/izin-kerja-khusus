@@ -25,6 +25,16 @@ class MonitoringController extends Controller
         $diajukan = $izin->whereNotNull('diajukan_at');
         $disahkan = $izin->whereNotNull('disahkan_at');
 
+        // Evaluasi pasca pekerjaan: hanya izin yang sudah dilaporkan (penutupan diajukan, selesai, atau dihentikan).
+        $dievaluasi = $izin->whereNotNull('ada_insiden');
+        $berinsiden = $dievaluasi->where('ada_insiden', true);
+        $waktu = $izin->map(fn (IzinKerja $i) => [$i, $i->kesesuaianWaktu()])->filter(fn ($p) => $p[1] !== null);
+        $labelWaktu = ['sesuai' => 'Sesuai jadwal', 'mulai_awal' => 'Mulai sebelum jadwal', 'lewat_waktu' => 'Selesai lewat waktu', 'sebelum_disahkan' => 'Mulai sebelum disahkan'];
+        $lewat = $waktu->filter(fn ($p) => $p[1]['lewat_menit'] > config('izin.toleransi_waktu_menit'));
+        $jedaLapor = $izin->filter(fn ($i) => $i->penutupan_diajukan_at && $i->selesai_aktual_at);
+
+        $baris = fn (IzinKerja $i, array $tambahan) => [...$i->ringkas(), ...$tambahan];
+
         return Inertia::render('Monitoring', [
             'filter' => [
                 'dari' => $dari->format('Y-m-d'),
@@ -43,6 +53,30 @@ class MonitoringController extends Controller
                 'rata_jam_persetujuan' => $disahkan->isEmpty() ? null
                     : round($disahkan->avg(fn ($i) => $i->diajukan_at->diffInMinutes($i->disahkan_at)) / 60, 1),
             ],
+            'pasca' => [
+                'dievaluasi' => $dievaluasi->count(),
+                'insiden' => $berinsiden->count(),
+                'tingkat_insiden' => $dievaluasi->isEmpty() ? null : round($berinsiden->count() / $dievaluasi->count() * 100, 1),
+                'dilaporkan_waktu' => $waktu->count(),
+                'sesuai_jadwal' => $waktu->filter(fn ($p) => $p[1]['kode'] === 'sesuai')->count(),
+                'lewat_waktu' => $lewat->count(),
+                'sebelum_disahkan' => $waktu->filter(fn ($p) => $p[1]['kode'] === 'sebelum_disahkan')->count(),
+                'rata_menit_lewat' => $lewat->isEmpty() ? null : (int) round($lewat->avg(fn ($p) => $p[1]['lewat_menit'])),
+                // Jeda dari pekerjaan selesai sampai penutupan dilaporkan.
+                'rata_jam_lapor' => $jedaLapor->isEmpty() ? null
+                    : round($jedaLapor->avg(fn ($i) => max(0, $i->selesai_aktual_at->diffInMinutes($i->penutupan_diajukan_at))) / 60, 1),
+            ],
+            'perKategoriInsiden' => $berinsiden->groupBy('kategori_insiden')
+                ->map(fn ($grup, $k) => ['label' => config('izin.insiden.'.$k, $k), 'jumlah' => $grup->count()])
+                ->sortByDesc('jumlah')->values(),
+            'perKesesuaian' => $waktu->groupBy(fn ($p) => $p[1]['kode'])
+                ->map(fn ($grup, $k) => ['label' => $labelWaktu[$k], 'jumlah' => $grup->count()])
+                ->sortByDesc('jumlah')->values(),
+            'daftarInsiden' => $berinsiden->sortByDesc('selesai_aktual_at')->take(20)
+                ->map(fn ($i) => $baris($i, ['label_insiden' => $i->labelInsiden(), 'uraian_insiden' => $i->uraian_insiden]))->values(),
+            'daftarWaktu' => $waktu->filter(fn ($p) => in_array($p[1]['kode'], ['lewat_waktu', 'sebelum_disahkan', 'mulai_awal'], true))
+                ->sortByDesc(fn ($p) => $p[1]['kode'] === 'sebelum_disahkan' ? PHP_INT_MAX : $p[1]['lewat_menit'])->take(20)
+                ->map(fn ($p) => $baris($p[0], ['kesesuaian_waktu' => $p[1]]))->values(),
             'perJenis' => $rekap('jenis', fn ($k) => config('izin.jenis.'.$k.'.label', $k)),
             'perLokasi' => $rekap('lokasi', fn ($k) => $k),
             'perDepartemen' => $rekap('departemen', fn ($k) => $k),

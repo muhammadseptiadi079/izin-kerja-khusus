@@ -89,6 +89,8 @@ class IzinKerjaController extends Controller
             'aksi' => $aksi,
             'aturan' => collect(Katalog::jenis())->firstWhere('kunci', $izin->jenis),
             ...collect(Katalog::umum())->only(['dokumen', 'uji_gas', 'tahap'])->all(),
+            'insiden' => config('izin.insiden'),
+            'pemeriksaanPenutupan' => config('izin.pemeriksaan_penutupan'),
         ]);
     }
 
@@ -136,7 +138,12 @@ class IzinKerjaController extends Controller
             'catatan' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $this->alur->jalankan($izin, $request->user(), $data['aksi'], $data['catatan'] ?? null);
+        $evaluasi = $request->only(
+            'ada_insiden', 'kategori_insiden', 'uraian_insiden', 'tindakan_insiden',
+            'mulai_aktual_at', 'selesai_aktual_at', 'pemeriksaan_penutupan',
+        );
+
+        $this->alur->jalankan($izin, $request->user(), $data['aksi'], $data['catatan'] ?? null, $evaluasi);
 
         return redirect()->route('izin.show', $izin)
             ->with('pesan', RiwayatIzin::AKSI[$data['aksi']].' berhasil. Status sekarang: '.$izin->labelStatus().'.');

@@ -29,7 +29,12 @@ class RekapIzinExport implements FromCollection, ShouldAutoSize, WithHeadings, W
 
     public function headings(): array
     {
-        return ['Nomor', 'Jenis', 'Status', 'Nama', 'NIK', 'Nomor WA', 'Departemen', 'Lokasi', 'Pekerjaan', 'Mulai', 'Selesai', 'Diajukan', 'Disahkan', 'Ditutup'];
+        return [
+            'Nomor', 'Jenis', 'Status', 'Nama', 'NIK', 'Nomor WA', 'Departemen', 'Lokasi', 'Pekerjaan',
+            'Mulai (jadwal)', 'Selesai (jadwal)', 'Diajukan', 'Disahkan', 'Ditutup',
+            'Mulai (sebenarnya)', 'Selesai (sebenarnya)', 'Kesesuaian waktu', 'Lewat jadwal (menit)',
+            'Insiden', 'Kronologi insiden', 'Tindakan insiden',
+        ];
     }
 
     /** @param IzinKerja $i */
@@ -42,6 +47,9 @@ class RekapIzinExport implements FromCollection, ShouldAutoSize, WithHeadings, W
             $i->departemen, $i->lokasiLengkap(), $i->uraian_pekerjaan,
             $i->mulai_at->format('d/m/Y H:i'), $i->selesai_at->format('d/m/Y H:i'),
             $i->diajukan_at?->format('d/m/Y H:i'), $i->disahkan_at?->format('d/m/Y H:i'), $i->ditutup_at?->format('d/m/Y H:i'),
+            $i->mulai_aktual_at?->format('d/m/Y H:i'), $i->selesai_aktual_at?->format('d/m/Y H:i'),
+            $i->kesesuaianWaktu()['label'] ?? null, $i->kesesuaianWaktu()['lewat_menit'] ?? null,
+            $i->labelInsiden(), $i->uraian_insiden, $i->tindakan_insiden,
         ];
     }
 

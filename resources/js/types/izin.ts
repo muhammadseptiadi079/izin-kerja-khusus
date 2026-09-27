@@ -37,6 +37,13 @@ export interface Katalog {
     peran: Record<string, string>;
 }
 
+export interface KesesuaianWaktu {
+    kode: 'sesuai' | 'lewat_waktu' | 'mulai_awal' | 'sebelum_disahkan';
+    label: string;
+    temuan: string[];
+    lewat_menit: number;
+}
+
 export interface IzinRingkas {
     id: number;
     nomor: string | null;
@@ -92,6 +99,16 @@ export interface IzinLengkap extends IzinRingkas {
     disahkan_at: string | null;
     ditutup_at: string | null;
     catatan_penutupan: string | null;
+    mulai_aktual_at: string | null;
+    selesai_aktual_at: string | null;
+    penutupan_diajukan_at: string | null;
+    ada_insiden: boolean | null;
+    kategori_insiden: string | null;
+    label_insiden: string | null;
+    uraian_insiden: string | null;
+    tindakan_insiden: string | null;
+    pemeriksaan_penutupan: string[];
+    kesesuaian_waktu: KesesuaianWaktu | null;
     pemohon_jabatan: string | null;
     dokumen: Dokumen[];
     riwayat: Riwayat[];

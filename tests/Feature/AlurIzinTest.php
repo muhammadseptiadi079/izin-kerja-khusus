@@ -60,9 +60,36 @@ function ajukan(User $pemohon, array $data): IzinKerja
     return IzinKerja::latest('id')->first();
 }
 
-function aksi(User $user, IzinKerja $izin, string $aksi, ?string $catatan = null)
+function aksi(User $user, IzinKerja $izin, string $aksi, ?string $catatan = null, array $tambahan = [])
 {
-    return test()->actingAs($user)->post(route('izin.aksi', $izin), ['aksi' => $aksi, 'catatan' => $catatan]);
+    return test()->actingAs($user)->post(route('izin.aksi', $izin), ['aksi' => $aksi, 'catatan' => $catatan, ...$tambahan]);
+}
+
+/** Isian penutupan yang lengkap, tanpa insiden, dengan jam kerja sesuai jadwal. */
+function penutupan(IzinKerja $izin, array $ubah = []): array
+{
+    // Pekerjaan baru bisa dilaporkan selesai setelah berjalan; majukan waktu ke tengah jadwal.
+    if (now()->lt($izin->mulai_at->copy()->addHours(2))) {
+        test()->travelTo($izin->mulai_at->copy()->addHours(2));
+    }
+
+    return array_merge([
+        'mulai_aktual_at' => $izin->mulai_at->format('Y-m-d\TH:i'),
+        'selesai_aktual_at' => now()->format('Y-m-d\TH:i'),
+        'ada_insiden' => false,
+        'pemeriksaan_penutupan' => config('izin.pemeriksaan_penutupan'),
+    ], $ubah);
+}
+
+/** Izin yang sudah melewati tiga tahap persetujuan. */
+function izinAktif(object $t, array $ubah = []): IzinKerja
+{
+    $izin = ajukan($t->pemohon, dataIzin(ubah: $ubah));
+    foreach ([$t->pengawas, $t->hse, $t->manajer] as $penyetuju) {
+        aksi($penyetuju, $izin, 'setujui');
+    }
+
+    return $izin->fresh();
 }
 
 test('izin lengkap melewati tiga tahap lalu ditutup', function () {
@@ -81,7 +108,7 @@ test('izin lengkap melewati tiga tahap lalu ditutup', function () {
     expect($izin->fresh()->status)->toBe('aktif')
         ->and($izin->fresh()->disahkan_at)->not->toBeNull();
 
-    aksi($this->pemohon, $izin, 'ajukan_penutupan', 'Area sudah dibersihkan');
+    aksi($this->pemohon, $izin, 'ajukan_penutupan', 'Area sudah dibersihkan', penutupan($izin));
     expect($izin->fresh()->status)->toBe('menunggu_penutupan');
 
     aksi($this->pengawas, $izin, 'tutup');
@@ -178,9 +205,11 @@ test('HSE bisa menghentikan izin aktif, pemohon tidak', function () {
     }
 
     aksi($this->pemohon, $izin, 'hentikan', 'Coba')->assertForbidden();
-    aksi($this->hse, $izin, 'hentikan', 'Angin kencang di atas batas');
+    aksi($this->hse, $izin, 'hentikan', 'Angin kencang di atas batas', ['ada_insiden' => false]);
 
-    expect($izin->fresh()->status)->toBe('dihentikan');
+    expect($izin->fresh()->status)->toBe('dihentikan')
+        ->and($izin->fresh()->ada_insiden)->toBeFalse()
+        ->and($izin->fresh()->selesai_aktual_at)->not->toBeNull();
 });
 
 test('pemohon hanya melihat izinnya sendiri', function () {
@@ -322,4 +351,75 @@ test('halaman akun bisa dibuka', function () {
 test('tamu tidak bisa membuka halaman akun dan tindakan', function () {
     $this->get(route('akun'))->assertRedirect(route('login'));
     $this->get(route('tindakan'))->assertRedirect(route('login'));
+});
+
+test('penutupan wajib menyertakan evaluasi pasca pekerjaan', function () {
+    $izin = izinAktif($this);
+
+    aksi($this->pemohon, $izin, 'ajukan_penutupan', 'Selesai')
+        ->assertSessionHasErrors(['ada_insiden', 'mulai_aktual_at', 'selesai_aktual_at', 'pemeriksaan_penutupan']);
+
+    aksi($this->pemohon, $izin, 'ajukan_penutupan', 'Selesai', penutupan($izin, [
+        'pemeriksaan_penutupan' => [config('izin.pemeriksaan_penutupan')[0]],
+    ]))->assertSessionHasErrors('pemeriksaan_penutupan');
+
+    aksi($this->pemohon, $izin, 'ajukan_penutupan', 'Selesai', penutupan($izin, ['ada_insiden' => true]))
+        ->assertSessionHasErrors(['kategori_insiden', 'uraian_insiden', 'tindakan_insiden']);
+
+    aksi($this->pemohon, $izin, 'ajukan_penutupan', 'Selesai', penutupan($izin, [
+        'selesai_aktual_at' => now()->addHours(3)->format('Y-m-d\TH:i'),
+    ]))->assertSessionHasErrors('selesai_aktual_at');
+
+    expect($izin->fresh()->status)->toBe('aktif');
+});
+
+test('insiden saat pekerjaan tercatat di izin', function () {
+    $izin = izinAktif($this);
+
+    aksi($this->pemohon, $izin, 'ajukan_penutupan', 'Selesai dengan catatan', penutupan($izin, [
+        'ada_insiden' => true,
+        'kategori_insiden' => 'nyaris_celaka',
+        'uraian_insiden' => 'Kunci pas jatuh dari ketinggian 3 m, tidak mengenai orang.',
+        'tindakan_insiden' => 'Alat diikat dengan tali pengaman, area bawah diberi barikade.',
+    ]))->assertSessionHasNoErrors();
+
+    $izin->refresh();
+    expect($izin->ada_insiden)->toBeTrue()
+        ->and($izin->labelInsiden())->toBe('Nyaris celaka (near miss)')
+        ->and($izin->penutupan_diajukan_at)->not->toBeNull();
+
+    $this->actingAs($this->pengawas)->get(route('izin.show', $izin))
+        ->assertInertia(fn (Assert $page) => $page->where('izin.label_insiden', 'Nyaris celaka (near miss)')
+            ->where('izin.kesesuaian_waktu.kode', 'sesuai'));
+});
+
+test('kesesuaian waktu membandingkan jam kerja sebenarnya dengan jadwal', function (int $mulaiMenit, int $selesaiMenit, string $kode) {
+    $izin = izinAktif($this);
+    $this->travelTo($izin->selesai_at->copy()->addHours(2));
+
+    aksi($this->pemohon, $izin, 'ajukan_penutupan', 'Selesai', penutupan($izin, [
+        'mulai_aktual_at' => $izin->mulai_at->copy()->addMinutes($mulaiMenit)->format('Y-m-d\TH:i'),
+        'selesai_aktual_at' => $izin->selesai_at->copy()->addMinutes($selesaiMenit)->format('Y-m-d\TH:i'),
+    ]))->assertSessionHasNoErrors();
+
+    expect($izin->fresh()->kesesuaianWaktu()['kode'])->toBe($kode);
+})->with([
+    'tepat jadwal' => [0, 0, 'sesuai'],
+    'masih dalam toleransi 15 menit' => [10, 14, 'sesuai'],
+    'selesai 1 jam lewat' => [0, 60, 'lewat_waktu'],
+    'mulai 2 jam sebelum disahkan' => [-120, 0, 'sebelum_disahkan'],
+]);
+
+test('izin yang dihentikan karena insiden tercatat', function () {
+    $izin = izinAktif($this);
+
+    aksi($this->hse, $izin, 'hentikan', 'Pekerja tergelincir', [
+        'ada_insiden' => true,
+        'kategori_insiden' => 'p3k',
+        'uraian_insiden' => 'Pekerja tergelincir di tangga, lecet di tangan.',
+        'tindakan_insiden' => 'P3K di lokasi, pekerjaan dihentikan, tangga diganti.',
+    ])->assertSessionHasNoErrors();
+
+    expect($izin->fresh()->status)->toBe('dihentikan')
+        ->and($izin->fresh()->kategori_insiden)->toBe('p3k');
 });

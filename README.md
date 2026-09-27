@@ -30,8 +30,10 @@ Web app untuk mengajukan, menyetujui, dan menutup **izin kerja khusus (IKK)** un
 - **Tolak dengan catatan**, lalu pemohon memperbaiki dan mengajukan ulang dengan nomor yang sama.
 - **Stop work**: Pengawas, HSE, atau Manajer bisa menghentikan izin aktif.
 - **Penutupan**: pemohon menyatakan pekerjaan selesai, Pengawas mengonfirmasi area aman.
+- **Evaluasi pasca pekerjaan**: saat menutup izin, pemohon wajib melaporkan jam kerja sebenarnya, ada tidaknya insiden (nyaris celaka, P3K, cedera berat, kerusakan alat, kebakaran, lingkungan) beserta kronologi dan tindakannya, serta memastikan kondisi area. Saat pekerjaan dihentikan, penyetuju juga mencatat ada tidaknya insiden.
+- **Kesesuaian waktu**: jam kerja sebenarnya dibandingkan dengan jadwal yang diajukan (toleransi 15 menit): *Sesuai jadwal*, *Mulai sebelum jadwal*, *Selesai lewat waktu*, atau *Mulai sebelum disahkan* (bekerja tanpa izin yang sah, ditandai merah).
 - **Cetak izin sebagai PDF** dengan logo, kolom persetujuan, dan daftar dokumen.
-- **Monitoring & Evaluasi**: grafik per jenis, lokasi, departemen, status, dan hari; tingkat penutupan, izin yang pernah ditolak, stop work, rata-rata waktu persetujuan; **unduh Excel (.xlsx)**.
+- **Monitoring & Evaluasi**: grafik per jenis, lokasi, departemen, status, dan hari; tingkat penutupan, izin yang pernah ditolak, stop work, rata-rata waktu persetujuan; **unduh Excel (.xlsx)**. Bagian **Evaluasi pasca pekerjaan** menampilkan jumlah dan tingkat insiden, insiden per kategori, persentase sesuai jadwal, izin lewat waktu, izin yang dimulai sebelum disahkan, rata-rata keterlambatan, jeda lapor penutupan, serta daftar izin yang perlu ditindaklanjuti. Semua kolom evaluasi ikut di Excel.
 - **Akun**: pekerja bisa mendaftar sendiri (otomatis sebagai pemohon); peran penyetuju hanya diberikan admin. Admin juga bisa menonaktifkan akun.
 - **Riwayat lengkap** dan **nomor otomatis** per jenis per bulan, misalnya `KP-202609-0001`.
 

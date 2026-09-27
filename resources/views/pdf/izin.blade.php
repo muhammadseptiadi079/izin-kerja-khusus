@@ -67,6 +67,37 @@
     </td></tr>
 </table>
 
+@if ($izin->ada_insiden !== null || $izin->kesesuaianWaktu())
+    @php $waktu = $izin->kesesuaianWaktu(); @endphp
+    <table class="isi">
+        <tr><th colspan="2" style="width:auto">EVALUASI PASCA PEKERJAAN</th></tr>
+        <tr><th>Jam kerja sebenarnya</th><td>
+            {{ $izin->mulai_aktual_at?->translatedFormat('d M Y H:i') ?? '—' }} s.d. {{ $izin->selesai_aktual_at?->translatedFormat('d M Y H:i') ?? '—' }}
+        </td></tr>
+        <tr><th>Kesesuaian waktu</th><td>
+            <strong>{{ $waktu['label'] ?? 'Tidak dilaporkan' }}</strong>
+            @foreach ($waktu['temuan'] ?? [] as $t)<br>{{ $t }}@endforeach
+        </td></tr>
+        <tr><th>Insiden</th><td>
+            <strong>{{ $izin->labelInsiden() }}</strong>
+            @if ($izin->ada_insiden)
+                <br>Kronologi: {!! nl2br(e($izin->uraian_insiden)) !!}
+                <br>Tindakan: {!! nl2br(e($izin->tindakan_insiden)) !!}
+            @endif
+        </td></tr>
+        @if ($izin->pemeriksaan_penutupan)
+            <tr><th>Kondisi area</th><td>
+                @foreach (config('izin.pemeriksaan_penutupan') as $item)
+                    [{{ in_array($item, $izin->pemeriksaan_penutupan) ? 'X' : ' ' }}] {{ $item }}<br>
+                @endforeach
+            </td></tr>
+        @endif
+        @if ($izin->catatan_penutupan)
+            <tr><th>Catatan</th><td>{!! nl2br(e($izin->catatan_penutupan)) !!}</td></tr>
+        @endif
+    </table>
+@endif
+
 @php
     $keputusan = fn (string $status) => $izin->riwayat->first(fn ($r) => $r->aksi === 'setujui' && $r->status_dari === $status);
 @endphp
