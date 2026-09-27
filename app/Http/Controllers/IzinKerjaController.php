@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\IzinKerja;
+use App\Models\RiwayatIzin;
 use App\Support\AlurIzin;
+use App\Support\Katalog;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class IzinKerjaController extends Controller
 {
@@ -20,15 +25,23 @@ class IzinKerjaController extends Controller
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
             ->when($request->jenis, fn ($q, $jenis) => $q->where('jenis', $jenis))
             ->when($request->cari, function ($q, $cari) {
-                $q->where(fn ($q) => $q->where('nomor', 'like', "%{$cari}%")
-                    ->orWhere('lokasi', 'like', "%{$cari}%")
-                    ->orWhere('uraian_pekerjaan', 'like', "%{$cari}%"));
+                // whereLike tidak peka huruf besar/kecil di SQLite maupun PostgreSQL.
+                $q->where(fn ($q) => $q->whereLike('nomor', "%{$cari}%")
+                    ->orWhereLike('lokasi', "%{$cari}%")
+                    ->orWhereLike('lokasi_detail', "%{$cari}%")
+                    ->orWhereLike('uraian_pekerjaan', "%{$cari}%"));
             })
             ->latest('updated_at')
             ->paginate(15)
             ->withQueryString();
 
-        return view('izin.index', compact('izin'));
+        return Inertia::render('Izin/Index', [
+            'izin' => $izin->through(fn (IzinKerja $i) => $i->ringkas()),
+            'filter' => $request->only('status', 'jenis', 'cari'),
+            'jenisList' => collect(config('izin.jenis'))->map(fn ($j) => $j['label']),
+            'statusList' => IzinKerja::STATUS,
+            'melihatSemua' => $request->user()->melihatSemuaIzin(),
+        ]);
     }
 
     public function create(Request $request)
@@ -36,7 +49,7 @@ class IzinKerjaController extends Controller
         $jenis = $request->query('jenis');
 
         if (! config('izin.jenis.'.$jenis)) {
-            return view('izin.pilih-jenis');
+            return Inertia::render('Izin/PilihJenis', ['jenis' => Katalog::jenis()]);
         }
 
         $user = $request->user();
@@ -49,7 +62,7 @@ class IzinKerjaController extends Controller
             'selesai_at' => now()->addHours(9)->startOfHour(),
         ]);
 
-        return view('izin.form', compact('izin'));
+        return $this->formulir($izin);
     }
 
     public function store(Request $request)
@@ -71,15 +84,20 @@ class IzinKerjaController extends Controller
         $izin->load('pemohon', 'riwayat.user', 'dokumen');
         $aksi = $this->alur->aksiTersedia($izin, $request->user());
 
-        return view('izin.show', compact('izin', 'aksi'));
+        return Inertia::render('Izin/Show', [
+            'izin' => $izin->lengkap(),
+            'aksi' => $aksi,
+            'aturan' => collect(Katalog::jenis())->firstWhere('kunci', $izin->jenis),
+            ...collect(Katalog::umum())->only(['dokumen', 'uji_gas', 'tahap'])->all(),
+        ]);
     }
 
     public function edit(Request $request, IzinKerja $izin)
     {
         $this->pastikanBisaDiubah($request, $izin);
-        $izin->load('dokumen', 'pemohon');
+        $izin->load('dokumen', 'pemohon', 'riwayat.user');
 
-        return view('izin.form', compact('izin'));
+        return $this->formulir($izin);
     }
 
     public function update(Request $request, IzinKerja $izin)
@@ -96,7 +114,9 @@ class IzinKerjaController extends Controller
         $this->pastikanTerlihat($request, $izin);
         $izin->load('pemohon', 'riwayat.user', 'dokumen');
 
-        return view('izin.cetak', compact('izin'));
+        return Pdf::loadView('pdf.izin', compact('izin'))
+            ->setPaper('a4')
+            ->stream(($izin->nomor ?? 'draf-'.$izin->id).'.pdf');
     }
 
     public function unduh(Request $request, IzinKerja $izin, string $jenis)
@@ -104,7 +124,7 @@ class IzinKerjaController extends Controller
         $this->pastikanTerlihat($request, $izin);
         $dokumen = $izin->dokumen()->where('jenis', $jenis)->firstOrFail();
 
-        return Storage::disk('local')->download($dokumen->path, $dokumen->nama_asli);
+        return Storage::disk(config('izin.dokumen_disk'))->download($dokumen->path, $dokumen->nama_asli);
     }
 
     public function aksi(Request $request, IzinKerja $izin)
@@ -112,14 +132,39 @@ class IzinKerjaController extends Controller
         $this->pastikanTerlihat($request, $izin);
 
         $data = $request->validate([
-            'aksi' => ['required', Rule::in(array_keys(\App\Models\RiwayatIzin::AKSI))],
+            'aksi' => ['required', Rule::in(array_keys(RiwayatIzin::AKSI))],
             'catatan' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $this->alur->jalankan($izin, $request->user(), $data['aksi'], $data['catatan'] ?? null);
 
         return redirect()->route('izin.show', $izin)
-            ->with('pesan', \App\Models\RiwayatIzin::AKSI[$data['aksi']].' berhasil. Status sekarang: '.$izin->labelStatus().'.');
+            ->with('pesan', RiwayatIzin::AKSI[$data['aksi']].' berhasil. Status sekarang: '.$izin->labelStatus().'.');
+    }
+
+    private function formulir(IzinKerja $izin): Response
+    {
+        $penolakan = $izin->status === 'ditolak'
+            ? $izin->riwayat->where('aksi', 'tolak')->last()
+            : null;
+
+        return Inertia::render('Izin/Form', [
+            'izin' => $izin->exists ? $izin->lengkap() : [
+                'id' => null,
+                'jenis' => $izin->jenis,
+                'nik' => $izin->nik,
+                'nomor_wa' => $izin->nomor_wa,
+                'departemen' => $izin->departemen,
+                'mulai_at' => $izin->mulai_at->toIso8601String(),
+                'selesai_at' => $izin->selesai_at->toIso8601String(),
+                'dokumen' => [],
+            ],
+            'penolakan' => $penolakan ? ['oleh' => $penolakan->user->name, 'catatan' => $penolakan->catatan] : null,
+            'aturan' => collect(Katalog::jenis())->firstWhere('kunci', $izin->jenis),
+            'katalog' => Katalog::umum(),
+            'aiTersedia' => filled(config('services.gemini.key')),
+            'masalah' => session('masalah', []),
+        ]);
     }
 
     private function setelahSimpan(Request $request, IzinKerja $izin)
@@ -133,7 +178,7 @@ class IzinKerjaController extends Controller
         } catch (ValidationException $e) {
             // Draf tetap tersimpan; pemohon melengkapi yang kurang lalu mengajukan lagi.
             return redirect()->route('izin.edit', $izin)
-                ->withErrors($e->errors())
+                ->with('masalah', collect($e->errors())->flatten()->all())
                 ->with('pesan', 'Draf disimpan, tetapi izin belum bisa diajukan.');
         }
 
@@ -218,7 +263,7 @@ class IzinKerjaController extends Controller
             }
 
             $lama = $izin->dokumen()->where('jenis', $jenis)->first();
-            $path = $berkas->store('dokumen-izin/'.$izin->id, 'local');
+            $path = $berkas->store('dokumen-izin/'.$izin->id, config('izin.dokumen_disk'));
 
             $izin->dokumen()->updateOrCreate(['jenis' => $jenis], [
                 'nama_asli' => $berkas->getClientOriginalName(),
@@ -227,7 +272,7 @@ class IzinKerjaController extends Controller
             ]);
 
             if ($lama) {
-                Storage::disk('local')->delete($lama->path);
+                Storage::disk(config('izin.dokumen_disk'))->delete($lama->path);
             }
         }
     }

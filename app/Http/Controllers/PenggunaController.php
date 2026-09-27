@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class PenggunaController extends Controller
 {
@@ -13,14 +15,16 @@ class PenggunaController extends Controller
     {
         $this->pastikanAdmin($request);
 
-        return view('pengguna.index', ['pengguna' => User::orderBy('peran')->orderBy('name')->get()]);
+        return Inertia::render('Pengguna/Index', [
+            'pengguna' => User::orderBy('peran')->orderBy('name')->get()->map(fn (User $u) => $this->data($u)),
+        ]);
     }
 
     public function create(Request $request)
     {
         $this->pastikanAdmin($request);
 
-        return view('pengguna.form', ['pengguna' => new User(['peran' => 'pemohon', 'aktif' => true])]);
+        return $this->formulir(new User(['peran' => 'pemohon', 'aktif' => true]));
     }
 
     public function store(Request $request)
@@ -35,7 +39,7 @@ class PenggunaController extends Controller
     {
         $this->pastikanAdmin($request);
 
-        return view('pengguna.form', compact('pengguna'));
+        return $this->formulir($pengguna);
     }
 
     public function update(Request $request, User $pengguna)
@@ -54,6 +58,23 @@ class PenggunaController extends Controller
         $pengguna->update($data);
 
         return redirect()->route('pengguna.index')->with('pesan', 'Pengguna diperbarui.');
+    }
+
+    private function formulir(User $pengguna): Response
+    {
+        return Inertia::render('Pengguna/Form', [
+            'pengguna' => $pengguna->exists ? $this->data($pengguna) : ['id' => null, 'peran' => 'pemohon', 'aktif' => true],
+            'peranList' => User::PERAN,
+            'departemen' => config('izin.departemen'),
+        ]);
+    }
+
+    private function data(User $u): array
+    {
+        return [
+            ...$u->only('id', 'name', 'email', 'peran', 'nik', 'nomor_wa', 'jabatan', 'departemen', 'aktif'),
+            'label_peran' => $u->labelPeran(),
+        ];
     }
 
     private function validasi(Request $request, ?User $pengguna = null): array

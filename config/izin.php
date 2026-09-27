@@ -186,6 +186,8 @@ return [
         'jsea' => 'Job Safety Environmental Analysis (JSEA)',
     ],
     'dokumen_maks_kb' => 10240,
+    // 'local' untuk VPS; 's3' untuk Vercel (Supabase Storage), karena disk Vercel tidak permanen.
+    'dokumen_disk' => env('DOKUMEN_DISK', 'local'),
     'dokumen_ekstensi' => ['pdf', 'doc', 'docx'],
 
     // Batas aman uji gas. Nilai di luar rentang membuat izin tidak dapat diajukan.

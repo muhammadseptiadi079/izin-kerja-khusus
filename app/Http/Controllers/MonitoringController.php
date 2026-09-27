@@ -2,69 +2,71 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\RekapIzinExport;
 use App\Models\IzinKerja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Inertia\Inertia;
+use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MonitoringController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         [$dari, $sampai] = $this->periode($request);
         $izin = $this->query($request, $dari, $sampai)->get();
 
-        $rekap = fn (string $kolom) => $izin->groupBy($kolom)->map->count()->sortDesc();
+        $rekap = fn (string $kolom, callable $label) => $izin->groupBy($kolom)
+            ->map(fn ($grup, $kunci) => ['label' => $label($kunci), 'jumlah' => $grup->count()])
+            ->sortByDesc('jumlah')->values();
 
         $diajukan = $izin->whereNotNull('diajukan_at');
         $disahkan = $izin->whereNotNull('disahkan_at');
 
-        $evaluasi = [
-            'total' => $izin->count(),
-            'diajukan' => $diajukan->count(),
-            'disetujui' => $disahkan->count(),
-            'ditolak_sekali' => $izin->filter(fn ($i) => $i->riwayat->contains('aksi', 'tolak'))->count(),
-            'dihentikan' => $izin->where('status', 'dihentikan')->count(),
-            'selesai' => $izin->where('status', 'selesai')->count(),
-            'lewat_waktu' => $izin->filter->lewatWaktu()->count(),
-            // Rata-rata jam dari diajukan sampai disahkan, sebagai ukuran kecepatan persetujuan.
-            'rata_jam_persetujuan' => $disahkan->isEmpty() ? null
-                : round($disahkan->avg(fn ($i) => $i->diajukan_at->diffInMinutes($i->disahkan_at)) / 60, 1),
-        ];
-
-        return view('monitoring', [
-            'dari' => $dari,
-            'sampai' => $sampai,
-            'evaluasi' => $evaluasi,
-            'perJenis' => $rekap('jenis'),
-            'perLokasi' => $rekap('lokasi'),
-            'perDepartemen' => $rekap('departemen'),
-            'perStatus' => $rekap('status'),
-            'perHari' => $izin->groupBy(fn ($i) => $i->mulai_at->format('Y-m-d'))->map->count()->sortKeys(),
+        return Inertia::render('Monitoring', [
+            'filter' => [
+                'dari' => $dari->format('Y-m-d'),
+                'sampai' => $sampai->format('Y-m-d'),
+                ...$request->only('jenis', 'lokasi', 'departemen'),
+            ],
+            'evaluasi' => [
+                'total' => $izin->count(),
+                'diajukan' => $diajukan->count(),
+                'disetujui' => $disahkan->count(),
+                'ditolak_sekali' => $izin->filter(fn ($i) => $i->riwayat->contains('aksi', 'tolak'))->count(),
+                'dihentikan' => $izin->where('status', 'dihentikan')->count(),
+                'selesai' => $izin->where('status', 'selesai')->count(),
+                'lewat_waktu' => $izin->filter->lewatWaktu()->count(),
+                // Rata-rata jam dari diajukan sampai disahkan, sebagai ukuran kecepatan persetujuan.
+                'rata_jam_persetujuan' => $disahkan->isEmpty() ? null
+                    : round($disahkan->avg(fn ($i) => $i->diajukan_at->diffInMinutes($i->disahkan_at)) / 60, 1),
+            ],
+            'perJenis' => $rekap('jenis', fn ($k) => config('izin.jenis.'.$k.'.label', $k)),
+            'perLokasi' => $rekap('lokasi', fn ($k) => $k),
+            'perDepartemen' => $rekap('departemen', fn ($k) => $k),
+            'perStatus' => $rekap('status', fn ($k) => IzinKerja::STATUS[$k] ?? $k),
+            'perHari' => $izin->groupBy(fn ($i) => $i->mulai_at->format('Y-m-d'))
+                ->map(fn ($grup, $hari) => ['tanggal' => $hari, 'jumlah' => $grup->count()])
+                ->sortKeys()->values(),
+            'pilihan' => [
+                'jenis' => collect(config('izin.jenis'))->map(fn ($j) => $j['label']),
+                'lokasi' => config('izin.lokasi'),
+                'departemen' => config('izin.departemen'),
+            ],
         ]);
     }
 
-    public function ekspor(Request $request)
+    public function ekspor(Request $request): BinaryFileResponse
     {
         [$dari, $sampai] = $this->periode($request);
         $izin = $this->query($request, $dari, $sampai)->orderBy('mulai_at')->get();
-        $nama = 'rekap-ikk-'.$dari->format('Ymd').'-'.$sampai->format('Ymd').'.csv';
 
-        return response()->streamDownload(function () use ($izin) {
-            $keluar = fopen('php://output', 'w');
-            fwrite($keluar, "\xEF\xBB\xBF"); // agar Excel membaca UTF-8
-            fputcsv($keluar, ['Nomor', 'Jenis', 'Status', 'Nama', 'NIK', 'Nomor WA', 'Departemen', 'Lokasi', 'Pekerjaan', 'Mulai', 'Selesai', 'Diajukan', 'Disahkan', 'Ditutup'], ';');
-
-            foreach ($izin as $i) {
-                fputcsv($keluar, [
-                    $i->nomor, $i->labelJenis(), $i->labelStatus(), $i->pemohon->name, $i->nik, $i->nomor_wa,
-                    $i->departemen, $i->lokasiLengkap(), $i->uraian_pekerjaan,
-                    $i->mulai_at->format('d/m/Y H:i'), $i->selesai_at->format('d/m/Y H:i'),
-                    $i->diajukan_at?->format('d/m/Y H:i'), $i->disahkan_at?->format('d/m/Y H:i'), $i->ditutup_at?->format('d/m/Y H:i'),
-                ], ';');
-            }
-
-            fclose($keluar);
-        }, $nama, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return Excel::download(
+            new RekapIzinExport($izin),
+            'rekap-ikk-'.$dari->format('Ymd').'-'.$sampai->format('Ymd').'.xlsx'
+        );
     }
 
     private function periode(Request $request): array

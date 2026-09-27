@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\IzinKerja;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DasborController extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request): Response
     {
         $user = $request->user();
         $terlihat = IzinKerja::terlihatOleh($user);
@@ -33,18 +35,22 @@ class DasborController extends Controller
             ->orderBy('selesai_at')
             ->get();
 
-        $izinSaya = IzinKerja::where('pemohon_id', $user->id)
+        $izinSaya = IzinKerja::with('pemohon')
+            ->where('pemohon_id', $user->id)
             ->whereIn('status', ['draf', 'ditolak'])
             ->latest('updated_at')
             ->get();
 
-        $ringkasan = [
-            'aktif' => $aktif->count(),
-            'lewat_waktu' => $aktif->filter->lewatWaktu()->count(),
-            'menunggu' => (clone $terlihat)->whereIn('status', array_keys(config('izin.tahap_persetujuan')))->count(),
-            'selesai_bulan_ini' => (clone $terlihat)->where('status', 'selesai')->where('ditutup_at', '>=', now()->startOfMonth())->count(),
-        ];
-
-        return view('dasbor', compact('perluTindakan', 'aktif', 'izinSaya', 'ringkasan'));
+        return Inertia::render('Dasbor', [
+            'perluTindakan' => $perluTindakan->map->ringkas(),
+            'aktif' => $aktif->map->ringkas(),
+            'izinSaya' => $izinSaya->map->ringkas(),
+            'ringkasan' => [
+                'aktif' => $aktif->count(),
+                'lewat_waktu' => $aktif->filter->lewatWaktu()->count(),
+                'menunggu' => (clone $terlihat)->whereIn('status', array_keys(config('izin.tahap_persetujuan')))->count(),
+                'selesai_bulan_ini' => (clone $terlihat)->where('status', 'selesai')->where('ditutup_at', '>=', now()->startOfMonth())->count(),
+            ],
+        ]);
     }
 }
