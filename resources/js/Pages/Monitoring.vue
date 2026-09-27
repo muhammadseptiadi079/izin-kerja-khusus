@@ -47,7 +47,7 @@ const tanggal = (ymd: string) => new Intl.DateTimeFormat('id-ID', { day: '2-digi
     <AppLayout judul="Monitoring & Evaluasi">
         <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-bold">Monitoring & Evaluasi</h1>
+                <h1 class="judul-halaman">Monitoring & Evaluasi</h1>
                 <p class="text-slate-600">
                     Rekap izin kerja khusus berdasarkan jadwal mulai, {{ tanggal(filter.dari) }} – {{ tanggal(filter.sampai) }}. Draf dan izin yang dibatalkan tidak dihitung.
                 </p>
@@ -86,25 +86,25 @@ const tanggal = (ymd: string) => new Intl.DateTimeFormat('id-ID', { day: '2-digi
         </form>
 
         <div class="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Statistik :angka="evaluasi.diajukan" label="Izin diajukan" />
-            <Statistik :angka="evaluasi.disetujui" label="Disetujui & aktif" />
-            <Statistik :angka="evaluasi.selesai" label="Selesai & ditutup" />
-            <Statistik :angka="evaluasi.rata_jam_persetujuan" label="Rata-rata jam sampai disetujui" />
-            <Statistik :angka="evaluasi.ditolak_sekali" label="Pernah ditolak (perlu perbaikan)" />
-            <Statistik :angka="evaluasi.dihentikan" label="Dihentikan (stop work)" :bahaya="evaluasi.dihentikan > 0" />
-            <Statistik :angka="evaluasi.lewat_waktu" label="Aktif lewat waktu, belum ditutup" :bahaya="evaluasi.lewat_waktu > 0" />
-            <Statistik :angka="`${tingkatPenutupan}%`" label="Tingkat penutupan" />
+            <Statistik :angka="evaluasi.diajukan" label="Izin diajukan" ikon="kirim" nada="oranye" />
+            <Statistik :angka="evaluasi.disetujui" label="Disetujui & aktif" ikon="aktif" nada="hijau" />
+            <Statistik :angka="evaluasi.selesai" label="Selesai & ditutup" ikon="selesai" nada="biru" />
+            <Statistik :angka="evaluasi.rata_jam_persetujuan" label="Rata-rata jam sampai disetujui" ikon="jam" nada="abu" />
+            <Statistik :angka="evaluasi.ditolak_sekali" label="Pernah ditolak (perlu perbaikan)" ikon="tolak" nada="amber" />
+            <Statistik :angka="evaluasi.dihentikan" label="Dihentikan (stop work)" ikon="henti" :bahaya="evaluasi.dihentikan > 0" />
+            <Statistik :angka="evaluasi.lewat_waktu" label="Aktif lewat waktu, belum ditutup" ikon="peringatan" :bahaya="evaluasi.lewat_waktu > 0" />
+            <Statistik :angka="`${tingkatPenutupan}%`" label="Tingkat penutupan" ikon="persen" nada="hijau" />
         </div>
 
         <div v-if="evaluasi.total === 0" class="panel text-slate-500">Belum ada izin pada periode dan filter ini.</div>
         <template v-else>
             <div class="grid gap-5 md:grid-cols-2">
-                <div class="panel"><h2 class="mb-2 font-bold">Per jenis izin</h2><GrafikBatang :data="perJenis" /></div>
-                <div class="panel"><h2 class="mb-2 font-bold">Per lokasi</h2><GrafikBatang :data="perLokasi" /></div>
-                <div class="panel"><h2 class="mb-2 font-bold">Per departemen</h2><GrafikBatang :data="perDepartemen" /></div>
-                <div class="panel"><h2 class="mb-2 font-bold">Per status</h2><GrafikBatang :data="perStatus" /></div>
+                <div class="panel"><h2 class="judul-bagian mb-2">Per jenis izin</h2><GrafikBatang :data="perJenis" /></div>
+                <div class="panel"><h2 class="judul-bagian mb-2">Per lokasi</h2><GrafikBatang :data="perLokasi" /></div>
+                <div class="panel"><h2 class="judul-bagian mb-2">Per departemen</h2><GrafikBatang :data="perDepartemen" /></div>
+                <div class="panel"><h2 class="judul-bagian mb-2">Per status</h2><GrafikBatang :data="perStatus" /></div>
             </div>
-            <div class="panel mt-5"><h2 class="mb-2 font-bold">Izin per hari mulai</h2><GrafikHarian :data="perHari" /></div>
+            <div class="panel mt-5"><h2 class="judul-bagian mb-2">Izin per hari mulai</h2><GrafikHarian :data="perHari" /></div>
         </template>
     </AppLayout>
 </template>

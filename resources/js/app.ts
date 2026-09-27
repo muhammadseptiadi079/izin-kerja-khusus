@@ -1,3 +1,4 @@
+import '@fontsource-variable/figtree';
 import '../css/app.css';
 import './bootstrap';
 
@@ -22,6 +23,7 @@ createInertiaApp({
             .mount(el);
     },
     progress: {
-        color: '#4B5563',
+        color: '#f97316',
+        showSpinner: false,
     },
 });

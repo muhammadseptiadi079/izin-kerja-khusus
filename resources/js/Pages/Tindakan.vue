@@ -18,7 +18,7 @@ const kosong = computed(() => !props.menungguKeputusan.length && !props.perluDip
 
 <template>
     <AppLayout judul="Tindakan">
-        <h1 class="text-2xl font-bold">Perlu tindakan</h1>
+        <h1 class="judul-halaman">Perlu tindakan</h1>
         <p class="mb-5 text-slate-600">Semua izin yang sedang menunggu Anda, diurutkan dari yang paling mendesak.</p>
 
         <div v-if="kosong" class="panel flex flex-col items-center gap-2 py-10 text-center">

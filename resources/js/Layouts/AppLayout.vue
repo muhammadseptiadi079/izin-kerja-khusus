@@ -55,7 +55,7 @@ const menuBawah = computed<ItemMenu[]>(() =>
     <Head :title="judul" />
     <div class="min-h-screen">
         <!-- Bilah atas: lengkap di laptop, ringkas di HP -->
-        <header class="sticky top-0 z-30 bg-arang text-white shadow">
+        <header class="sticky top-0 z-30 bg-arang/95 text-white shadow-lg shadow-black/10 backdrop-blur">
             <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
                 <Link :href="route(ruteBeranda)" class="flex shrink-0 items-center gap-2.5 font-bold">
                     <img src="/img/logo.png" alt="" class="h-9 w-9 rounded-md" />
@@ -112,10 +112,13 @@ const menuBawah = computed<ItemMenu[]>(() =>
                 <!-- HP: hanya nama peran di kanan atas, menu ada di bawah -->
                 <span v-if="user" class="ml-auto truncate text-right text-xs text-slate-400 lg:hidden">{{ user.label_peran }}</span>
             </div>
+            <div class="h-0.5 bg-linear-to-r from-transparent via-merek-500 to-transparent opacity-80" />
         </header>
 
-        <main class="mx-auto max-w-6xl px-4 pt-6 pb-28 lg:pb-16">
-            <div v-if="halaman.props.pesan" class="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">{{ halaman.props.pesan }}</div>
+        <main :key="halaman.component" class="mx-auto max-w-6xl animate-muncul px-4 pt-6 pb-28 lg:pb-16">
+            <div v-if="halaman.props.pesan" class="mb-5 flex items-start gap-2.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 shadow-kartu">
+                <Ikon nama="centang" kelas="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />{{ halaman.props.pesan }}
+            </div>
             <slot />
         </main>
 

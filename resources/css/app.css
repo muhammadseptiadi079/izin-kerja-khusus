@@ -6,42 +6,80 @@
 @source '../js';
 
 @theme {
-    --font-sans: Figtree, ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Figtree Variable', ui-sans-serif, system-ui, sans-serif;
 
     /* Oranye logo dan hitam kop, dipakai di seluruh aplikasi. */
     --color-merek-50: #fff7ed;
     --color-merek-100: #ffedd5;
+    --color-merek-200: #fed7aa;
+    --color-merek-400: #fb923c;
     --color-merek-500: #f97316;
     --color-merek-600: #ea580c;
     --color-merek-700: #c2410c;
+    --color-merek-800: #9a3412;
     --color-arang: #0b0b0c;
+    --color-arang-2: #17181b;
     --color-teal-judul: #1f5f7a;
     --color-biru-judul: #3b6fd8;
+    --color-latar: #f5f6f8;
+
+    --shadow-kartu: 0 1px 2px rgb(15 23 42 / .04), 0 1px 3px rgb(15 23 42 / .06);
+    --shadow-angkat: 0 4px 10px -2px rgb(15 23 42 / .08), 0 12px 24px -8px rgb(15 23 42 / .12);
+    --shadow-oranye: 0 6px 16px -4px rgb(234 88 12 / .45);
+
+    --animate-muncul: muncul .35s ease-out both;
+}
+
+@keyframes muncul {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+}
+
+@layer base {
+    html { -webkit-tap-highlight-color: transparent; }
+    body { font-feature-settings: 'ss01', 'cv11'; }
+    :focus-visible { outline: 2px solid var(--color-merek-500); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+        *, ::before, ::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
 }
 
 @layer components {
     .panel {
-        @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm;
+        @apply rounded-2xl border border-slate-200/80 bg-white p-5 shadow-kartu sm:p-6;
+    }
+    .judul-halaman {
+        @apply text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl;
+    }
+    .judul-bagian {
+        @apply text-lg font-bold tracking-tight text-slate-900;
     }
     .tombol {
-        @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-merek-700 bg-merek-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-merek-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-merek-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+        @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-merek-600 bg-merek-600 px-4 py-2.5 text-sm font-semibold text-white shadow-oranye transition hover:-translate-y-px hover:bg-merek-500 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
     }
     .tombol-sekunder {
-        @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-merek-500 disabled:opacity-50;
+        @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-kartu transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50;
     }
     .tombol-hijau {
-        @apply inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-merek-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-green-700 bg-green-700 hover:bg-green-600;
+        @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-green-700 bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-kartu transition hover:bg-green-600 disabled:opacity-50;
     }
     .tombol-merah {
-        @apply inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-merek-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-red-700 bg-red-700 hover:bg-red-600;
+        @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-700 bg-red-700 px-4 py-2.5 text-sm font-semibold text-white shadow-kartu transition hover:bg-red-600 disabled:opacity-50;
     }
     .tombol-teal {
-        @apply inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-merek-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-teal-judul bg-teal-judul hover:brightness-110;
+        @apply inline-flex items-center justify-center gap-1.5 rounded-xl border border-teal-judul bg-teal-judul px-4 py-2.5 text-sm font-semibold text-white shadow-kartu transition hover:-translate-y-px hover:brightness-110;
     }
     .masukan {
-        @apply block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-merek-500 focus:ring-merek-500;
+        @apply block w-full rounded-xl border-slate-300 bg-white px-3.5 py-2.5 text-sm shadow-kartu transition placeholder:text-slate-400 focus:border-merek-500 focus:ring-4 focus:ring-merek-500/15;
     }
     .label {
-        @apply mb-1 block text-sm font-semibold text-slate-800;
+        @apply mb-1.5 block text-sm font-semibold text-slate-800;
+    }
+    /* Pilihan checkbox berbentuk kartu: jelas tercentang atau belum, mudah diketuk di HP. */
+    .pilihan {
+        @apply flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm transition select-none hover:border-slate-300 has-checked:border-merek-500 has-checked:bg-merek-50 has-checked:ring-1 has-checked:ring-merek-500/30;
+    }
+    .pilihan input[type='checkbox'] {
+        @apply mt-0.5 h-4.5 w-4.5 shrink-0 rounded-md border-slate-300 text-merek-600 focus:ring-merek-500;
     }
 }

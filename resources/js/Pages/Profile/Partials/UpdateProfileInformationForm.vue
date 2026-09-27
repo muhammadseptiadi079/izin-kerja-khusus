@@ -19,7 +19,7 @@ const form = useForm({
 
 <template>
     <section>
-        <h2 class="text-lg font-bold">Data diri</h2>
+        <h2 class="judul-bagian">Data diri</h2>
         <p class="mb-4 text-sm text-slate-600">Data ini otomatis mengisi formulir registrasi izin. Peran Anda: <strong>{{ user.label_peran }}</strong>.</p>
 
         <form class="space-y-4" @submit.prevent="form.patch(route('profile.update'))">

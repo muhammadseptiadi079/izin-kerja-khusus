@@ -24,7 +24,7 @@ defineProps<{ jenis: JenisIzin; dokumen: Record<string, string>; uji_gas: Record
 
         <div class="grid gap-5 md:grid-cols-2">
             <div class="panel">
-                <h2 class="mb-2 font-bold">Bahaya yang harus diidentifikasi</h2>
+                <h2 class="judul-bagian mb-2">Bahaya yang harus diidentifikasi</h2>
                 <ul class="list-disc space-y-1 pl-5">
                     <li v-for="b in jenis.bahaya" :key="b">{{ b }}</li>
                 </ul>
@@ -39,7 +39,7 @@ defineProps<{ jenis: JenisIzin; dokumen: Record<string, string>; uji_gas: Record
                 </ul>
             </div>
             <div class="panel">
-                <h2 class="mb-2 font-bold">Persyaratan pengajuan</h2>
+                <h2 class="judul-bagian mb-2">Persyaratan pengajuan</h2>
                 <ul class="list-disc space-y-1 pl-5">
                     <li v-for="(label, k) in dokumen" :key="k">Unggah {{ label }}</li>
                     <li>Durasi izin maksimal {{ jenis.durasi_maks_jam }} jam. Pekerjaan lebih lama diajukan per shift.</li>
@@ -50,7 +50,7 @@ defineProps<{ jenis: JenisIzin; dokumen: Record<string, string>; uji_gas: Record
                 </ul>
             </div>
             <div class="panel">
-                <h2 class="mb-2 font-bold">Alur persetujuan</h2>
+                <h2 class="judul-bagian mb-2">Alur persetujuan</h2>
                 <ol class="list-decimal space-y-1 pl-5">
                     <li v-for="t in tahap" :key="t.status">{{ t.label }}</li>
                     <li>Izin aktif, pekerjaan boleh dimulai</li>

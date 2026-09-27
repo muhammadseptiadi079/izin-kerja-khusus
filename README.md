@@ -112,7 +112,7 @@ config/izin.php                 semua aturan izin
 
 ## Tangkapan layar
 
-| Registrasi izin | Izin aktif |
+| Registrasi izin | Detail izin |
 | --- | --- |
 | ![](docs/tangkapan/02-registrasi.png) | ![](docs/tangkapan/03-izin-aktif.png) |
 | **Monitoring & Evaluasi** | **Tampilan HP** |

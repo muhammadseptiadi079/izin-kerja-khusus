@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Ikon from '@/Components/Ikon.vue';
 import InputError from '@/Components/InputError.vue';
+import JudulLangkah from '@/Components/JudulLangkah.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { keInputWaktu } from '@/lib/format';
 import type { PageProps } from '@/types';
@@ -47,6 +48,30 @@ const form = useForm({
 
 const dokumenAda = computed(() => Object.fromEntries((props.izin.dokumen ?? []).map((d) => [d.jenis, d])));
 
+// Pemeriksaan di layar agar pemohon tahu yang kurang sebelum menekan ajukan. Server tetap memeriksa ulang.
+const cek = computed(() => ({
+    pemohon: !!(form.nik && form.nomor_wa && form.departemen),
+    pekerjaan: !!(form.lokasi && form.uraian_pekerjaan && form.mulai_at && form.selesai_at && form.pekerja),
+    pengendalian: props.aturan.pengendalian.every((p) => form.pengendalian.includes(p)),
+    apd: form.apd.length > 0,
+    gas:
+        !props.aturan.uji_gas ||
+        (kunciGas.every((k) => aman(k, form.uji_gas[k]) === true) && !!form.uji_gas_oleh && !!form.uji_gas_at),
+    dokumen: Object.keys(props.katalog.dokumen).every((k) => form.dokumen[k] || dokumenAda.value[k]),
+}));
+const daftarCek = computed(() =>
+    [
+        { label: 'data pemohon', ok: cek.value.pemohon },
+        { label: 'pekerjaan', ok: cek.value.pekerjaan },
+        { label: 'pengendalian', ok: cek.value.pengendalian },
+        { label: 'APD', ok: cek.value.apd },
+        ...(props.aturan.uji_gas ? [{ label: 'uji gas', ok: cek.value.gas }] : []),
+        { label: 'dokumen', ok: cek.value.dokumen },
+    ],
+);
+const jumlahLengkap = computed(() => daftarCek.value.filter((c) => c.ok).length);
+const siap = computed(() => jumlahLengkap.value === daftarCek.value.length);
+
 function aman(kunci: string, nilai: string | number): boolean | null {
     if (nilai === '' || nilai === null) return null;
     const b = props.katalog.uji_gas[kunci];
@@ -92,7 +117,7 @@ async function mintaSaran() {
     <AppLayout :judul="izin.id ? 'Ubah Izin' : 'Registrasi Izin'">
         <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-bold">{{ aturan.label }} / <em class="text-biru-judul">{{ aturan.label_en }}</em></h1>
+                <h1 class="judul-halaman">{{ aturan.label }} / <em class="text-biru-judul">{{ aturan.label_en }}</em></h1>
                 <p class="text-slate-600">
                     {{ aturan.deskripsi }} Durasi maksimal {{ aturan.durasi_maks_jam }} jam.
                     <Link :href="route('jenis.show', aturan.kunci)" class="text-merek-700 hover:underline">Baca persyaratan</Link>
@@ -116,7 +141,7 @@ async function mintaSaran() {
 
         <form class="space-y-5" @submit.prevent="simpan(true)">
             <section class="panel">
-                <h2 class="mb-3 text-lg font-bold">1. Data pemohon</h2>
+                <JudulLangkah :nomor="1" judul="Data pemohon" :selesai="cek.pemohon" />
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="label" for="nama">Nama / <em>Your name</em></label>
@@ -145,7 +170,7 @@ async function mintaSaran() {
             </section>
 
             <section class="panel">
-                <h2 class="mb-3 text-lg font-bold">2. Pekerjaan</h2>
+                <JudulLangkah :nomor="2" judul="Pekerjaan" keterangan="Lokasi, jadwal, dan orang yang bekerja." :selesai="cek.pekerjaan" />
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="label" for="lokasi">Lokasi / <em>Location</em></label>
@@ -207,39 +232,44 @@ async function mintaSaran() {
             </section>
 
             <section class="panel">
-                <h2 class="mb-3 text-lg font-bold">3. Identifikasi bahaya</h2>
-                <label v-for="b in aturan.bahaya" :key="b" class="mb-2 flex items-start gap-2">
-                    <input v-model="form.bahaya" type="checkbox" :value="b" class="mt-0.5 rounded text-merek-600" />
+                <JudulLangkah :nomor="3" judul="Identifikasi bahaya" keterangan="Centang bahaya yang ada di pekerjaan ini." :selesai="form.bahaya.length > 0 || !!form.bahaya_lain" />
+                <div class="grid gap-2 sm:grid-cols-2">
+                <label v-for="b in aturan.bahaya" :key="b" class="pilihan">
+                    <input v-model="form.bahaya" type="checkbox" :value="b" />
                     <span>{{ b }} <span v-if="ai.disarankan.includes(b)" class="rounded bg-violet-100 px-1 text-xs font-semibold text-violet-800">AI</span></span>
                 </label>
-                <label class="label mt-3" for="bahaya_lain">Bahaya lain</label>
+                </div>
+                <label class="label mt-4" for="bahaya_lain">Bahaya lain</label>
                 <textarea id="bahaya_lain" v-model="form.bahaya_lain" rows="3" class="masukan" />
             </section>
 
             <section class="panel">
-                <h2 class="text-lg font-bold">4. Pengendalian wajib</h2>
-                <p class="mb-3 text-sm text-slate-500">Semua butir harus sudah dipastikan di lapangan sebelum izin dapat diajukan.</p>
-                <label v-for="p in aturan.pengendalian" :key="p" class="mb-2 flex items-start gap-2">
-                    <input v-model="form.pengendalian" type="checkbox" :value="p" class="mt-0.5 rounded text-merek-600" />
-                    <span>{{ p }}</span>
-                </label>
-                <label class="label mt-3" for="pengendalian_tambahan">Pengendalian tambahan</label>
+                <JudulLangkah :nomor="4" judul="Pengendalian wajib" keterangan="Semua butir harus sudah dipastikan di lapangan sebelum izin dapat diajukan." :selesai="cek.pengendalian" />
+                <div class="grid gap-2">
+                    <label v-for="p in aturan.pengendalian" :key="p" class="pilihan">
+                        <input v-model="form.pengendalian" type="checkbox" :value="p" />
+                        <span>{{ p }}</span>
+                    </label>
+                </div>
+                <p class="mt-2 text-xs font-semibold" :class="cek.pengendalian ? 'text-green-700' : 'text-slate-500'">
+                    {{ form.pengendalian.length }} dari {{ aturan.pengendalian.length }} dipastikan
+                </p>
+                <label class="label mt-4" for="pengendalian_tambahan">Pengendalian tambahan</label>
                 <textarea id="pengendalian_tambahan" v-model="form.pengendalian_tambahan" rows="3" class="masukan" />
             </section>
 
             <section class="panel">
-                <h2 class="mb-3 text-lg font-bold">5. Alat pelindung diri (APD)</h2>
+                <JudulLangkah :nomor="5" judul="Alat pelindung diri (APD)" keterangan="Pilih semua APD yang wajib dipakai." :selesai="cek.apd" />
                 <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    <label v-for="a in katalog.apd" :key="a" class="flex items-start gap-2">
-                        <input v-model="form.apd" type="checkbox" :value="a" class="mt-0.5 rounded text-merek-600" />
+                    <label v-for="a in katalog.apd" :key="a" class="pilihan">
+                        <input v-model="form.apd" type="checkbox" :value="a" />
                         <span>{{ a }} <span v-if="ai.disarankan.includes(a)" class="rounded bg-violet-100 px-1 text-xs font-semibold text-violet-800">AI</span></span>
                     </label>
                 </div>
             </section>
 
             <section v-if="aturan.uji_gas" class="panel">
-                <h2 class="text-lg font-bold">6. Uji gas</h2>
-                <p class="mb-3 text-sm text-slate-500">Izin tidak dapat diajukan bila salah satu hasil di luar batas aman.</p>
+                <JudulLangkah :nomor="6" judul="Uji gas" keterangan="Izin tidak dapat diajukan bila salah satu hasil di luar batas aman." :selesai="cek.gas" />
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div v-for="(b, k) in katalog.uji_gas" :key="k">
                         <label class="label" :for="`gas_${k}`">{{ b.label }}</label>
@@ -269,16 +299,26 @@ async function mintaSaran() {
             </section>
 
             <section class="panel">
-                <h2 class="text-lg font-bold">Dokumen pendukung</h2>
-                <p class="mb-2 text-sm text-slate-500">
-                    Unggah 1 berkas PDF atau Word untuk masing-masing, maksimal {{ katalog.dokumen_maks_kb / 1024 }} MB. Ketiganya wajib sebelum izin bisa diajukan.
-                </p>
-                <div v-for="(label, k) in katalog.dokumen" :key="k" class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-3 last:border-0">
+                <JudulLangkah
+                    :nomor="aturan.uji_gas ? 7 : 6"
+                    judul="Dokumen pendukung"
+                    :keterangan="`1 berkas PDF atau Word per dokumen, maksimal ${katalog.dokumen_maks_kb / 1024} MB. Ketiganya wajib.`"
+                    :selesai="cek.dokumen"
+                />
+                <div
+                    v-for="(label, k) in katalog.dokumen"
+                    :key="k"
+                    :class="[
+                        'mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 last:mb-0',
+                        form.dokumen[k] || dokumenAda[k] ? 'border-green-200 bg-green-50/50' : 'border-dashed border-slate-300',
+                    ]"
+                >
                     <div>
                         <div class="font-semibold">{{ label }}</div>
                         <div class="text-sm">
                             <template v-if="form.dokumen[k]">
-                                <span class="text-blue-700">Akan diunggah: {{ form.dokumen[k]!.name }}</span>
+                                <span class="font-semibold text-blue-700">Akan diunggah: {{ form.dokumen[k]!.name }}</span>
+                                <span class="text-slate-500"> ({{ Math.max(1, Math.round(form.dokumen[k]!.size / 1024)) }} KB)</span>
                             </template>
                             <template v-else-if="dokumenAda[k]">
                                 <span class="text-green-700">✓</span>
@@ -289,20 +329,39 @@ async function mintaSaran() {
                         </div>
                         <InputError :message="(form.errors as Record<string, string>)[`dokumen.${k}`]" />
                     </div>
-                    <input
-                        type="file"
-                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        class="max-w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold"
-                        @input="form.dokumen[k] = ($event.target as HTMLInputElement).files?.[0] ?? null"
-                    />
+                    <label class="tombol-sekunder cursor-pointer px-3 py-2 focus-within:ring-2 focus-within:ring-merek-500">
+                        <Ikon nama="unduh" kelas="h-4 w-4 rotate-180" />{{ form.dokumen[k] || dokumenAda[k] ? 'Ganti berkas' : 'Pilih berkas' }}
+                        <input
+                            type="file"
+                            class="sr-only"
+                            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            @input="form.dokumen[k] = ($event.target as HTMLInputElement).files?.[0] ?? null"
+                        />
+                    </label>
                 </div>
                 <progress v-if="form.progress" :value="form.progress.percentage" max="100" class="mt-2 w-full">{{ form.progress.percentage }}%</progress>
             </section>
 
-            <div class="panel flex flex-wrap items-center gap-3">
-                <button type="submit" class="tombol" :disabled="form.processing">Simpan & ajukan</button>
-                <button type="button" class="tombol-sekunder" :disabled="form.processing" @click="simpan(false)">Simpan sebagai draf</button>
-                <span class="text-sm text-slate-500">Draf bisa dilengkapi nanti. Izin yang diajukan diteruskan ke Pengawas Area.</span>
+            <div class="sticky bottom-20 z-20 rounded-2xl border border-slate-200 bg-white/95 px-3 py-2.5 shadow-angkat backdrop-blur sm:p-4 lg:bottom-4">
+                <div class="flex items-center gap-3">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between text-xs font-semibold">
+                            <span :class="siap ? 'text-green-700' : 'text-slate-600'">{{ siap ? 'Siap diajukan' : `Lengkap ${jumlahLengkap}/${daftarCek.length}` }}</span>
+                            <span v-if="!siap" class="hidden truncate pl-2 text-slate-400 sm:inline">Kurang: {{ daftarCek.filter((c) => !c.ok).map((c) => c.label).join(', ') }}</span>
+                        </div>
+                        <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                            <div :class="['h-full rounded-full transition-all duration-500', siap ? 'bg-green-500' : 'bg-merek-500']" :style="{ width: `${(jumlahLengkap / daftarCek.length) * 100}%` }" />
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" class="tombol-sekunder px-3" :disabled="form.processing" @click="simpan(false)">
+                            <span class="sm:hidden">Draf</span><span class="hidden sm:inline">Simpan draf</span>
+                        </button>
+                        <button type="submit" class="tombol px-3 sm:px-4" :disabled="form.processing">
+                            <Ikon nama="kirim" kelas="h-4 w-4" /><span class="sm:hidden">Ajukan</span><span class="hidden sm:inline">Simpan & ajukan</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </form>
     </AppLayout>

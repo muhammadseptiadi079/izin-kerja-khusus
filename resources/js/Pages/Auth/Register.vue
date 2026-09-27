@@ -22,7 +22,7 @@ const submit = () => form.post(route('register'), { onFinish: () => form.reset('
 <template>
     <GuestLayout>
         <Head title="Buat Akun" />
-        <h1 class="text-lg font-bold">Buat akun pekerja</h1>
+        <h1 class="judul-bagian">Buat akun pekerja</h1>
         <p class="mb-4 text-sm text-slate-600">Akun dipakai untuk mengajukan izin dan memantau status persetujuannya.</p>
 
         <form class="space-y-4" @submit.prevent="submit">

@@ -58,44 +58,74 @@ function aman(kunci: string, nilai: unknown): boolean | null {
 
 <template>
     <AppLayout :judul="izin.nomor ?? 'Draf Izin'">
-        <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
-            <div>
-                <h1 class="text-2xl font-bold">{{ izin.nomor ?? `Draf #${izin.id}` }} · {{ izin.label_jenis }}</h1>
-                <div class="mt-1"><StatusBadge :status="izin.status" :label="izin.label_status" :lewat-waktu="izin.lewat_waktu" /></div>
+        <section class="panel mb-5 overflow-hidden p-0 sm:p-0">
+            <div class="grid md:grid-cols-[260px_1fr]">
+                <img v-if="aturan.gambar" :src="aturan.gambar" :alt="aturan.label" class="aspect-[16/7] h-full w-full bg-slate-100 object-cover sm:aspect-video md:aspect-auto" />
+                <div class="p-5 sm:p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <p class="text-sm font-semibold text-merek-700">{{ izin.label_jenis }} · <em class="font-normal text-slate-500">{{ aturan.label_en }}</em></p>
+                            <h1 class="judul-halaman mt-0.5 tabular-nums">{{ izin.nomor ?? `Draf #${izin.id}` }}</h1>
+                            <div class="mt-2"><StatusBadge :status="izin.status" :label="izin.label_status" :lewat-waktu="izin.lewat_waktu" /></div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <Link v-if="aksi.includes('ajukan')" :href="route('izin.edit', izin.id)" class="tombol">Ubah & ajukan</Link>
+                            <a v-if="izin.nomor" :href="route('izin.cetak', izin.id)" target="_blank" class="tombol-sekunder"><Ikon nama="cetak" kelas="h-4 w-4" />Cetak PDF</a>
+                        </div>
+                    </div>
+                    <dl class="mt-5 grid gap-3 text-sm sm:grid-cols-3">
+                        <div class="rounded-xl bg-slate-50 px-3 py-2.5">
+                            <dt class="flex items-center gap-1.5 text-xs text-slate-500"><Ikon nama="rumah" kelas="h-3.5 w-3.5" />Lokasi</dt>
+                            <dd class="mt-0.5 font-semibold">{{ izin.lokasi }}</dd>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 px-3 py-2.5">
+                            <dt class="flex items-center gap-1.5 text-xs text-slate-500"><Ikon nama="jam" kelas="h-3.5 w-3.5" />Jadwal</dt>
+                            <dd class="mt-0.5 font-semibold">{{ tanggalJam(izin.mulai_at) }}<br /><span class="font-normal text-slate-500">s.d.</span> {{ tanggalJam(izin.selesai_at) }}</dd>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 px-3 py-2.5">
+                            <dt class="flex items-center gap-1.5 text-xs text-slate-500"><Ikon nama="profil" kelas="h-3.5 w-3.5" />Pemohon</dt>
+                            <dd class="mt-0.5 font-semibold">{{ izin.pemohon }}</dd>
+                            <dd class="text-xs text-slate-500">{{ izin.departemen }}</dd>
+                        </div>
+                    </dl>
+                </div>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <Link v-if="aksi.includes('ajukan')" :href="route('izin.edit', izin.id)" class="tombol">Ubah & ajukan</Link>
-                <a v-if="izin.nomor" :href="route('izin.cetak', izin.id)" target="_blank" class="tombol-sekunder"><Ikon nama="cetak" kelas="h-4 w-4" />Cetak PDF</a>
-            </div>
-        </div>
 
-        <div v-if="posisi !== -1" class="panel mb-5">
-            <h2 class="mb-2 font-bold">Tahapan</h2>
-            <ol class="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-                <li
-                    v-for="l in langkah"
-                    :key="l.status"
-                    :class="[
-                        'rounded-lg px-2 py-2 text-center text-sm',
-                        {
-                            'bg-green-100 text-green-800': keadaanLangkah(l.status) === 'lewat',
-                            'bg-amber-100 font-bold text-amber-800': keadaanLangkah(l.status) === 'kini',
-                            'bg-slate-100 text-slate-500': keadaanLangkah(l.status) === 'nanti',
-                        },
-                    ]"
-                >
-                    {{ l.label }}
+            <!-- Tahapan -->
+            <ol v-if="posisi !== -1" class="flex border-t border-slate-100 px-3 py-4 sm:px-6">
+                <li v-for="(l, i) in langkah" :key="l.status" class="relative flex flex-1 flex-col items-center text-center">
+                    <span
+                        v-if="i > 0"
+                        :class="['absolute top-4 right-1/2 h-0.5 w-full -translate-y-1/2', keadaanLangkah(l.status) === 'nanti' ? 'bg-slate-200' : 'bg-green-500']"
+                    />
+                    <span
+                        :class="[
+                            'relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ring-4 ring-white',
+                            {
+                                'bg-green-600 text-white': keadaanLangkah(l.status) === 'lewat',
+                                'bg-amber-500 text-white shadow-[0_0_0_6px_rgb(245_158_11/.2)]': keadaanLangkah(l.status) === 'kini',
+                                'bg-slate-200 text-slate-500': keadaanLangkah(l.status) === 'nanti',
+                            },
+                        ]"
+                    >
+                        <Ikon v-if="keadaanLangkah(l.status) === 'lewat'" nama="centang" kelas="h-4 w-4" />
+                        <template v-else>{{ i + 1 }}</template>
+                    </span>
+                    <span :class="['mt-1.5 px-0.5 text-[11px] leading-tight sm:text-xs', keadaanLangkah(l.status) === 'kini' ? 'font-bold text-amber-800' : 'text-slate-600']">
+                        {{ l.label }}
+                    </span>
                 </li>
             </ol>
-        </div>
+        </section>
 
         <div v-if="izin.lewat_waktu" class="mb-5 flex gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
             <Ikon nama="peringatan" class="shrink-0" />
             Waktu izin sudah berakhir pada {{ tanggalJam(izin.selesai_at) }}. Hentikan pekerjaan dan ajukan penutupan, atau ajukan izin baru.
         </div>
 
-        <div v-if="tombolAksi.length" class="panel mb-5">
-            <h2 class="mb-2 font-bold">Tindakan</h2>
+        <div v-if="tombolAksi.length" class="panel mb-5 border-merek-200 ring-1 ring-merek-500/10">
+            <h2 class="judul-bagian mb-1 flex items-center gap-2"><Ikon nama="lonceng" kelas="h-5 w-5 text-merek-600" />Tindakan Anda</h2>
+            <p class="mb-3 text-sm text-slate-500">Periksa rincian di bawah sebelum memutuskan.</p>
             <label class="label" for="catatan">Catatan</label>
             <textarea id="catatan" v-model="form.catatan" rows="3" class="masukan" placeholder="Wajib diisi untuk penolakan, penghentian, dan penutupan" />
             <InputError :message="form.errors.catatan || (form.errors as Record<string, string>).setujui" />
@@ -108,7 +138,7 @@ function aman(kunci: string, nilai: unknown): boolean | null {
 
         <div class="grid gap-5 lg:grid-cols-2">
             <div class="panel">
-                <h2 class="mb-3 font-bold">Rincian pekerjaan</h2>
+                <h2 class="judul-bagian mb-3">Rincian pekerjaan</h2>
                 <dl class="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[150px_1fr]">
                     <dt class="text-slate-500">Pemohon</dt>
                     <dd>{{ izin.pemohon }}<span v-if="izin.pemohon_jabatan"> · {{ izin.pemohon_jabatan }}</span></dd>
@@ -142,7 +172,7 @@ function aman(kunci: string, nilai: unknown): boolean | null {
             </div>
 
             <div class="panel text-sm">
-                <h2 class="mb-3 font-bold">Bahaya & pengendalian</h2>
+                <h2 class="judul-bagian mb-3">Bahaya & pengendalian</h2>
                 <h3 class="mb-1 font-semibold">Bahaya teridentifikasi</h3>
                 <ul class="mb-3 list-disc pl-5">
                     <li v-for="b in izin.bahaya" :key="b">{{ b }}</li>
@@ -184,7 +214,7 @@ function aman(kunci: string, nilai: unknown): boolean | null {
         </div>
 
         <div class="panel mt-5">
-            <h2 class="mb-2 font-bold">Dokumen pendukung</h2>
+            <h2 class="judul-bagian mb-2">Dokumen pendukung</h2>
             <div v-for="(label, k) in dokumen" :key="k" class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 py-2.5 last:border-0">
                 <span class="font-semibold">{{ label }}</span>
                 <template v-for="d in [izin.dokumen.find((x) => x.jenis === k)]" :key="k">
@@ -195,7 +225,7 @@ function aman(kunci: string, nilai: unknown): boolean | null {
         </div>
 
         <div class="panel mt-5">
-            <h2 class="mb-3 font-bold">Riwayat</h2>
+            <h2 class="judul-bagian mb-3">Riwayat</h2>
             <ol class="relative ml-2 border-l-2 border-slate-200">
                 <li v-for="r in izin.riwayat" :key="r.id" class="relative pb-4 pl-5 last:pb-0">
                     <span class="absolute top-1.5 -left-[7px] h-3 w-3 rounded-full bg-merek-600" />

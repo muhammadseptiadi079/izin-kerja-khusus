@@ -26,7 +26,7 @@ const simpan = () => (props.pengguna.id ? form.put(route('pengguna.update', prop
 
 <template>
     <AppLayout :judul="pengguna.id ? 'Ubah Pengguna' : 'Tambah Pengguna'">
-        <h1 class="mb-5 text-2xl font-bold">{{ pengguna.id ? 'Ubah pengguna' : 'Tambah pengguna' }}</h1>
+        <h1 class="judul-halaman mb-5">{{ pengguna.id ? 'Ubah pengguna' : 'Tambah pengguna' }}</h1>
         <form class="panel max-w-2xl space-y-4" @submit.prevent="simpan">
             <div><label class="label" for="name">Nama</label><input id="name" v-model="form.name" required class="masukan" /><InputError :message="form.errors.name" /></div>
             <div><label class="label" for="email">Email</label><input id="email" v-model="form.email" type="email" required class="masukan" /><InputError :message="form.errors.email" /></div>

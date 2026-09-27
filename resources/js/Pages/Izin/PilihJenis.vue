@@ -8,7 +8,7 @@ defineProps<{ jenis: JenisIzin[] }>();
 
 <template>
     <AppLayout judul="Registrasi Izin">
-        <h1 class="text-2xl font-bold">Registrasi Izin Kerja Khusus</h1>
+        <h1 class="judul-halaman">Registrasi Izin Kerja Khusus</h1>
         <p class="mb-5 text-slate-600">Pilih jenis izin kerja khusus (<em>work permit system</em>) untuk pekerjaan yang akan dilakukan.</p>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

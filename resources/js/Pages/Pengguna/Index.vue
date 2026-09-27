@@ -11,7 +11,7 @@ defineProps<{
     <AppLayout judul="Pengguna">
         <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-bold">Pengguna</h1>
+                <h1 class="judul-halaman">Pengguna</h1>
                 <p class="text-slate-600">Peran menentukan tahap persetujuan yang dapat diputuskan setiap orang.</p>
             </div>
             <Link :href="route('pengguna.create')" class="tombol">+ Tambah pengguna</Link>

@@ -24,7 +24,7 @@ function terapkan() {
     <AppLayout judul="Daftar Izin">
         <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-bold">Daftar Izin</h1>
+                <h1 class="judul-halaman">Daftar Izin</h1>
                 <p class="text-slate-600">{{ melihatSemua ? 'Semua izin kerja khusus.' : 'Izin yang Anda ajukan.' }}</p>
             </div>
             <Link :href="route('izin.create')" class="tombol hidden lg:inline-flex">+ Ajukan izin</Link>

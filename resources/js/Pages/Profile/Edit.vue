@@ -8,7 +8,7 @@ defineProps<{ mustVerifyEmail?: boolean; status?: string; departemen: string[] }
 
 <template>
     <AppLayout judul="Profil">
-        <h1 class="mb-5 text-2xl font-bold">Profil</h1>
+        <h1 class="judul-halaman mb-5">Profil</h1>
         <div class="max-w-2xl space-y-5">
             <div class="panel">
                 <UpdateProfileInformationForm :must-verify-email="mustVerifyEmail" :status="status" :departemen="departemen" />
